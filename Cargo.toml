@@ -11,3 +11,5 @@ members=[
 
 [dependencies]
 sc-core = {path = "crates/core"}
+sc-render = {path = "crates/render"}
+sc-app = {path = "crates/app"}

@@ -1,15 +1,19 @@
-use std::{fmt::Debug};
-
-use super::voxel::Voxel;
+use std::{fmt::Debug, marker::PhantomData};
 
 /// Dimension
-pub struct Dim<Map> where
-Map: MapTrait<Voxel>,
+pub struct Dim<MapVox, MapElem, V> where
+MapElem: ElemMapTrait<V>,
+MapVox: VoxMapTrait<V>,
 {
-    map: Map,
+    map_vox: MapVox,
+    map_elem: MapElem,
+    voxel: PhantomData<V>,
 }
 
-pub trait MapTrait<Vox>: Default + Debug + Clone{
+pub trait VoxMapTrait<Vox>: Default + Debug + Clone{
 
 }
 
+pub trait ElemMapTrait<Elem>: Default + Debug + Clone{
+
+}

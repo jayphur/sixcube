@@ -1,7 +1,8 @@
 mod component;
 mod system;
+mod collection;
 mod entity;
 
+pub use collection::Collection;
 pub use component::Component;
-pub use entity::Entity;
 pub use system::System;
