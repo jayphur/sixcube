@@ -1,4 +1,6 @@
 use std::{fmt::Debug, marker::PhantomData};
+use prelude::*;
+use super::pos::GlobalPos;
 
 /// Dimension
 pub struct Dim<MapVox, MapElem, V> where
@@ -11,9 +13,9 @@ MapVox: VoxMapTrait<V>,
 }
 
 pub trait VoxMapTrait<Vox>: Default + Debug + Clone{
-
+    fn generate_nearby(center: GlobalPos, radius: u16) -> Result<()>;
 }
 
 pub trait ElemMapTrait<Elem>: Default + Debug + Clone{
-
+    
 }

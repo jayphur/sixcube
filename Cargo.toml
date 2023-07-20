@@ -13,3 +13,4 @@ members=[
 sc-core = {path = "crates/core"}
 sc-render = {path = "crates/render"}
 sc-app = {path = "crates/app"}
+prelude = {path = "crates/prelude"}
