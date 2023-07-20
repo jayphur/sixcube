@@ -3,19 +3,23 @@ use prelude::*;
 use super::pos::GlobalPos;
 
 /// Dimension
-pub struct Dim<MapVox, MapElem, V> where
-MapElem: ElemMapTrait<V>,
-MapVox: VoxMapTrait<V>,
+pub struct Dim<MapVox, MapElem, MapGen, Vox> where
+MapElem: ElemMapTrait<Vox, MapGen>,
+MapVox: VoxMapTrait<Vox, MapGen>,
 {
     map_vox: MapVox,
     map_elem: MapElem,
-    voxel: PhantomData<V>,
+    //markers
+    voxel: PhantomData<Vox>,
+    map_gen: MapGen,
 }
 
-pub trait VoxMapTrait<Vox>: Default + Debug + Clone{
-    fn generate_nearby(center: GlobalPos, radius: u16) -> Result<()>;
+pub trait VoxMapTrait<Vox, Gen>: Default + Debug + Clone{
+    type MapProxy;
+    /// Should generate at least this area.
+    fn generate_at(center: GlobalPos, radius: u16, world_gen: &Gen) -> Result<()>;
 }
 
-pub trait ElemMapTrait<Elem>: Default + Debug + Clone{
+pub trait ElemMapTrait<Elem, Gen>: Default + Debug + Clone{
     
 }

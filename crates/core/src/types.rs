@@ -1,4 +1,4 @@
-use crate::{obj::{dim::{VoxMapTrait, ElemMapTrait}, voxel::Voxel, element::Element}, ecs::{Component, System}};
+use crate::{obj::{dim::{VoxMapTrait, ElemMapTrait}, voxel::Voxel, element::Element, map_gen::MapGenerator}, ecs::{Component, System}};
 
 // this trait is in an awkward middle ground of bi-directional dependency
 
@@ -15,6 +15,8 @@ pub trait TypeRoster{
     type ElementId: Component<Self::IdSystem>;
 
     // map
-    type VoxelMap: VoxMapTrait<Voxel<Self::VoxelId, Self::VoxelDisplay>>;
-    type ElementMap: ElemMapTrait<Element<Self::VoxelId, Self::VoxelDisplay>>;
+    type VoxelMap: VoxMapTrait<Voxel<Self::VoxelId, Self::VoxelDisplay>, Self::MapGen>;
+    type ElementMap: ElemMapTrait<Element<Self::VoxelId, Self::VoxelDisplay>, Self::MapGen>;
+
+    type MapGen: MapGenerator<Voxel<Self::VoxelId, Self::VoxelDisplay>, Element<Self::VoxelId, Self::VoxelDisplay>>;
 }
