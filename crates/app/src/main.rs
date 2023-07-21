@@ -1,22 +1,3 @@
-pub use type_roster::TypeRoster;
+fn main(){
 
-mod type_roster{
-    pub struct TypeRoster();
-    impl sc_core::types::TypeRoster for TypeRoster{
-        type DisplaySystem = ();
-
-        type VoxelDisplay = ();
-
-        type ElementDisplay = ();
-
-        type IdSystem = ();
-
-        type VoxelId = ();
-
-        type ElementId = ();
-
-        type VoxelMap = ();
-
-        type ElementMap = ();
-    }
-};
+}

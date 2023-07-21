@@ -6,4 +6,3 @@ pub mod obj{
     pub mod map_gen;
 }
 pub mod ecs;
-pub mod types;
