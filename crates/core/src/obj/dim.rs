@@ -1,6 +1,6 @@
 use std::{fmt::Debug, marker::PhantomData};
-use prelude::*;
-use super::{pos::GlobalPos, map_gen::MapGen};
+use sc_prelude::*;
+use super::pos::GlobalPos;
 
 /// Dimension
 pub struct Dim<Map, MapGen, Vox, Elem> where
@@ -23,5 +23,14 @@ pub trait MapTrait<V, E>: Default + Debug{
     G: MapGen<V, E, Self>;
 }
 pub trait MapProxy<V, E, M: MapTrait<V,E>>{
-    
+
+}
+pub trait MapGen<V, E, M>: Debug + Default + Clone where
+M: MapTrait<V, E>,
+{
+    type Seed: Clone;
+
+    fn set_seed(&mut self, seed: &Self::Seed) -> Result<()>;
+    //TODO: something to do with get(GlobalPos) -> ...
+    fn generate_at(&self, pos: GlobalPos) -> M::GenResult;
 }
