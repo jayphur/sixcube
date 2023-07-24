@@ -1,14 +1,6 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+use std::marker::PhantomData;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+use sc_core::obj::{dim::{self, MapGen}, pos::GlobalPos};
+use sc_prelude::*;
+mod map;
+mod map_gen;
