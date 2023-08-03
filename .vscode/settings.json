@@ -1,6 +1,8 @@
 {
     "cSpell.words": [
         "Display",
+        "Octree",
         "renderable"
-    ]
+    ],
+    "rust-analyzer.showUnlinkedFileNotification": false
 }

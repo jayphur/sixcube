@@ -15,15 +15,7 @@ Map: MapTrait<Vox, Elem>,
 }
 
 pub trait MapTrait<V, E>: Default + Debug{
-    type MapProxy: MapProxy<V, E, Self>;
-    type GenResult; //How should the generator return results?
-
-    /// Should generate at least this area. if it doesn't exist.
-    fn ensure_radius<G>(center: GlobalPos, radius: u16, world_gen: &G) -> Result<()> where
-    G: MapGen<V, E, Self>;
-}
-pub trait MapProxy<V, E, M: MapTrait<V,E>>{
-
+    type Gen: MapGen<V, E, Self>;
 }
 pub trait MapGen<V, E, M>: Debug + Default + Clone where
 M: MapTrait<V, E>,
@@ -31,6 +23,6 @@ M: MapTrait<V, E>,
     type Seed: Clone;
 
     fn set_seed(&mut self, seed: &Self::Seed) -> Result<()>;
-    //TODO: something to do with get(GlobalPos) -> ...
-    fn generate_at(&self, pos: GlobalPos) -> M::GenResult;
+    fn generate_at(&self, map: &mut M, pos: GlobalPos) -> Result<()>;
+    fn generate_at_rad(&self, map: &mut M, center: GlobalPos, radius: u16)  -> Result<()>;
 }
