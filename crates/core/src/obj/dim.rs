@@ -12,9 +12,11 @@ Map: MapTrait<Voxel, Element> + 'static,
     map: Map,
 }
 
+/// A map stores the voxels/chunks(?) in a dimension
 pub trait MapTrait<V, E>: Default + Debug{
     type Gen: MapGen<V, E, Self>;
 }
+/// Generates a map (something that impl MapTrait<V,E>)
 pub trait MapGen<V, E, M>: Debug + Default + Clone where
 M: MapTrait<V, E>,
 {

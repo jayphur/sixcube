@@ -13,9 +13,6 @@ pub trait System{
     fn use_component<'a>(&mut self, component: &mut Self::Component) -> Result<()>;
 }
 
-pub trait Component: Debug{
+pub trait Component: Debug + Default{
 
 }
-
-#[derive(Default, Debug)]
-pub struct ComponentList(Vec<Box<dyn Component>>);
