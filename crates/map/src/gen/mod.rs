@@ -1,4 +1,4 @@
-use sc_core::obj::{dim::{self, MapTrait}, pos::GlobalPos};
+use sc_core::{obj::dim::{self}, pos::GlobalPos};
 use sc_prelude::*;
 
 use crate::map::Map;

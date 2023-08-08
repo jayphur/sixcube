@@ -1,17 +1,15 @@
-use std::{fmt::Debug, marker::PhantomData};
+use std::{fmt::Debug};
 use sc_prelude::*;
-use super::pos::GlobalPos;
+use crate::{data::pos::GlobalPos, r#type::DimType};
+
+use super::{voxel::Voxel, element::Element};
 
 /// Dimension
-pub struct Dim<Map, MapGen, Vox, Elem> where
-Map: MapTrait<Vox, Elem>,
+pub struct Dim<Map> where
+Map: MapTrait<Voxel, Element> + 'static,
 {
+    my_type: &'static dyn DimType<Map>,
     map: Map,
-    map_gen: MapGen,
-
-    //markers
-    voxel: PhantomData<Vox>,
-    element: PhantomData<Elem>,
 }
 
 pub trait MapTrait<V, E>: Default + Debug{

@@ -1,7 +1,5 @@
-pub mod obj{
-    pub mod dim;
-    pub mod element;
-    pub mod voxel;
-    pub mod pos;
-}
+pub mod obj;
+mod data;
+pub use data::*;
 pub mod ecs;
+pub mod r#type;

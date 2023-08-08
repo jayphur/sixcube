@@ -1,4 +1,4 @@
-use sc_core::obj::{dim, pos::GlobalPos};
+use sc_core::obj::dim;
 use sc_prelude::*;
 
 use crate::gen::Gen;
