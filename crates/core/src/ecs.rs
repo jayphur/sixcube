@@ -13,6 +13,9 @@ pub trait System{
     fn use_component<'a>(&mut self, component: &mut Self::Component) -> Result<()>;
 }
 
+#[derive(Debug)]
+pub struct ComponentList();
+
 pub trait Component: Debug + Default{
 
 }

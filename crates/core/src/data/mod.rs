@@ -3,3 +3,6 @@ use std::sync::Arc;
 pub struct Name(Arc<String>);
 
 pub mod pos;
+pub mod map;
+mod seed;
+pub use seed::*;

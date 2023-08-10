@@ -1,5 +1,5 @@
 use std::fmt::Debug;
-use crate::{data::Name, obj::{voxel::Voxel, element::Element, dim::{Dim, MapTrait}}};
+use crate::data::Name;
 
 /// Type of something. a block / item / etc. Can be applied to "obj"s.
 pub trait Type: Debug{
@@ -11,16 +11,8 @@ pub trait Type: Debug{
 
 // the type trait ready for specific objects. They should be able to return some info with using a `&'static self`
 
-pub trait VoxelType: Type<Obj=Voxel>{
-
-}
-
-pub trait ElementType: Type<Obj=Element>{
-    
-}
-
-pub trait DimType<Map>: Type<Obj = Dim<Map>> where
-Map: MapTrait<Voxel, Element> + 'static
-{
-
+pub trait ContainsTypes<'a, TypePtr: Clone>{
+    type Id;
+    fn get(&'a self, id: Self::Id) -> TypePtr; 
+    fn deref_to_id(ptr: TypePtr) -> Self::Id;
 }

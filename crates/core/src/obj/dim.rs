@@ -1,28 +1,25 @@
-use std::{fmt::Debug};
 use sc_prelude::*;
-use crate::{data::pos::GlobalPos, r#type::DimType};
+use crate::{data::pos::GlobalPos, map, r#type::Type, Seed};
 
-use super::{voxel::Voxel, element::Element};
+use super::{voxel::Voxel, Obj, type_ptr::dim::DimTypePtr};
 
-/// Dimension
-pub struct Dim<Map> where
-Map: MapTrait<Voxel, Element> + 'static,
-{
-    my_type: &'static dyn DimType<Map>,
-    map: Map,
+/// Dimension. Dimension wide that/Dimension specific data.
+#[derive(Debug)]
+pub struct Dim{
+    pub my_type: DimTypePtr,
+}
+impl Obj for Dim{
+    type Type = DimTypePtr;
+}
+impl map::DimTrait for Dim{
+    fn gen_at(&self, seed: Seed, pos: GlobalPos) -> Result<Voxel> {
+        self.my_type.gen_at(seed, pos)
+    }
 }
 
-/// A map stores the voxels/chunks(?) in a dimension
-pub trait MapTrait<V, E>: Default + Debug{
-    type Gen: MapGen<V, E, Self>;
-}
-/// Generates a map (something that impl MapTrait<V,E>)
-pub trait MapGen<V, E, M>: Debug + Default + Clone where
-M: MapTrait<V, E>,
-{
-    type Seed: Clone;
 
-    fn set_seed(&mut self, seed: &Self::Seed) -> Result<()>;
-    fn generate_at(&self, map: &mut M, pos: GlobalPos) -> Result<()>;
-    fn generate_at_rad(&self, map: &mut M, center: GlobalPos, radius: u16)  -> Result<()>;
+
+///The requirements that a DimType (ptr) must be able to do 
+pub trait DimType: Type<Obj=Dim>{
+    fn gen_at(&self, seed: Seed, pos: GlobalPos) -> Result<Voxel>;
 }

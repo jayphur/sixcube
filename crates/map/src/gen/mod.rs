@@ -5,21 +5,13 @@ use crate::map::Map;
 
 
 #[derive(Debug, Default, Clone)]
-pub struct Gen<V, E> where
-V: crate::Voxel,
-E: crate::Entity, 
-{
+pub struct Gen<V, E>{
     _v: PhantomData<V>,
     _e: PhantomData<E>,
 }
 
-impl<V, E> dim::MapGen<V,E, Map<V,E>> for Gen<V,E> where
-V: crate::Voxel,
-E: crate::Entity, 
-{
-    type Seed = u128;
-
-    fn set_seed(&mut self, seed: &Self::Seed) -> Result<()> {
+impl<V: Debug + Default, E> Gen<V,E>{
+    fn set_seed(&mut self, seed: &u32) -> Result<()> {
         todo!()
     }
 
