@@ -3,7 +3,6 @@ use crate::{obj::{dim, voxel::Voxel}, pos::GlobalPos, Seed};
 use self::chunk_space::ChunkSpace;
 
 mod chunk_space;
-mod chunk;
 
 #[derive(Debug, Default)]
 pub struct Map<V,E> where

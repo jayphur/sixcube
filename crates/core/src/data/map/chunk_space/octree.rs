@@ -56,7 +56,7 @@ impl<T: Debug + Default> NodeChild<T>{
         match self{
             NodeChild::Empty => None,
             NodeChild::Leaf(t) => {
-                if pos != (0,0,0) || size != 0 { panic!("tree structure is malformed/unbalanced") }
+                if pos != (0,0,0) || size > 1 { panic!("tree structure is malformed/unbalanced") }
                 Some(t)
             },
             NodeChild::Node(node) => {
@@ -69,7 +69,7 @@ impl<T: Debug + Default> NodeChild<T>{
         match self{
             NodeChild::Empty => None,
             NodeChild::Leaf(t) => {
-                if pos != (0,0,0) || size != 0 { panic!("tree structure is malformed/unbalanced") }
+                if pos != (0,0,0) || size > 1 { panic!("tree structure is malformed/unbalanced") }
                 Some(t)
             },
             NodeChild::Node(node) => {
@@ -79,7 +79,7 @@ impl<T: Debug + Default> NodeChild<T>{
     }
 
     fn get_mut_strong(&mut self, pos: (u16,u16,u16), size: u16) -> &mut T {
-        if pos == (0,0,0){
+        if size <= 1{
             match self{
                 NodeChild::Empty => {
                     *self = NodeChild::Leaf(T::default());
@@ -95,10 +95,7 @@ impl<T: Debug + Default> NodeChild<T>{
             match self{
                 NodeChild::Empty => {
                     *self = NodeChild::Node(Box::new(BranchNode::new()));
-                    match self{ 
-                        NodeChild::Node(node) => node.get_mut_strong(pos, size), 
-                        _ => unreachable!()
-                    }
+                    self.get_mut_strong(pos, size)
                 },
                 NodeChild::Node(node) => node.get_mut_strong(pos, size),
                 _ => panic!("tree structure is malformed/unbalanced"),
@@ -108,9 +105,15 @@ impl<T: Debug + Default> NodeChild<T>{
 }
 // each node's child is 0 to 1 units displaced in each axis from (0,0,0).
 
-// EX: the root is child_size = 4. This children are from -4 to 0
-// these children's children are now 0 to 2.
+// EX: the root is child_size = 4. This children are -4 and 0
+// those children's children are now 0 to 2.
 // THOSE children's children are now 0 to 1.
+// 
+// the children on the "left side" (the ones that start with -4) are [-4,-1] 
+// (-1 because the largest number they can have is 3. -4 + 3 = -1)
+//
+// the children on the "right" (starting from zero) are just [0,3]
+//
 // thus, the root's child_size is the range as such: [-size, size)
 // the "ranges" of the non-root nodes are the min & max displacement the node can do: [0, 2*size) 
 
@@ -163,9 +166,12 @@ impl<T: Debug + Default> RootNode<T>{
             return None;
         }
         let convert = |val: i16| {
+            if val == 0{
+                return (true, 0)
+            }
             let index = val.is_positive();
             if index {
-                (index, (val - size) as u16)
+                (index, (val) as u16)
             } else {
                 (index, (val + size) as u16)
             }
@@ -189,27 +195,27 @@ impl<T: Debug + Default> BranchNode<T>{
         Self { children: Default::default() }
     }
     fn get_weak(&self, pos: PosUnsigned, size: u16) -> Option<&T>{
-        let (index, pos) = Self::reduce_pos(pos,size);
+        let (index, pos) = Self::pos_to_index_and_relative(pos,size);
         self.children[index.2 as usize][index.1 as usize][index.0 as usize].get_weak(pos, size / 2)
     }
     fn get_mut_weak(&mut self, pos: PosUnsigned, size: u16) -> Option<&mut T>{
-        let (index, pos) = Self::reduce_pos(pos,size);
+        let (index, pos) = Self::pos_to_index_and_relative(pos,size);
         self.children[index.2 as usize][index.1 as usize][index.0 as usize].get_mut_weak(pos, size / 2)
     }
     fn get_mut_strong(&mut self, pos: PosUnsigned, size: u16) -> &mut T{
-        let (index, pos) = Self::reduce_pos(pos,size);
+        let (index, pos) = Self::pos_to_index_and_relative(pos,size);
         self.children[index.2 as usize][index.1 as usize][index.0 as usize].get_mut_strong(pos, size / 2)
     }
-    fn reduce_pos(pos: PosUnsigned, size: u16) -> ((usize,usize,usize), PosUnsigned){
-        let index = |val: u16| { val < size };
+    fn pos_to_index_and_relative(pos: PosUnsigned, size: u16) -> ((usize,usize,usize), PosUnsigned){
+        let index = |val: u16| { (val >= size) as usize};
         let index = 
             (index(pos.0),
             index(pos.1),
             index(pos.2));
-        let pos = 
+        let relative = 
             ((pos.0 - index.0 as u16 * size),
-            (pos.0 - index.0 as u16 * size),
-            (pos.0 - index.0 as u16 * size));
-        ((index.0 as usize, index.1 as usize, index.2 as usize), pos)
+            (pos.1 - index.1 as u16 * size),
+            (pos.2 - index.2 as u16 * size));
+        ((index.0, index.1, index.2), relative)
     }
 }
