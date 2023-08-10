@@ -1,4 +1,4 @@
-use crate::{Seed, obj::{dim::{DimType, Dim}, voxel::Voxel}, pos::GlobalPos, r#type::Type};
+use crate::{Seed, obj::{dim::{DimType, Dim, MapTrait}, voxel::Voxel}, pos::GlobalPos, r#type::Type, map::Map};
 use sc_prelude::*;
 
 
@@ -15,6 +15,9 @@ impl Type for DimTypePtr{
         todo!()
     }
     fn new_obj(&'static self) -> Self::Obj {
-        Dim{my_type: DimTypePtr(self.0)}
+        Dim{
+            my_type: DimTypePtr(self.0), 
+            map:  Map::new(),
+        }
     }
 }
