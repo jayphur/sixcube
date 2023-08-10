@@ -1,5 +1,5 @@
 # sixcube
-
+(in development)
 if you have any name ideas, condsider a pull request to `name_ideas`. (currently using sixcube)
 
 
