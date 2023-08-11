@@ -79,7 +79,7 @@ impl<T: Debug + Default> NodeChild<T>{
     }
 
     fn get_mut_strong(&mut self, pos: (u16,u16,u16), size: u16) -> &mut T {
-        if size <= 1{
+        if size == 0{
             match self{
                 NodeChild::Empty => {
                     *self = NodeChild::Leaf(T::default());
