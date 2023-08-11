@@ -143,7 +143,11 @@ impl<T: Default + Debug> RootNode<T>{
 
     fn get_mut_strong(&mut self, pos: (i16,i16,i16)) -> &mut T {
         let Some(pos) = self.global_pos_to_local(pos) else {
-            todo!() //expand 
+            let new_root = RootNode::<T>{
+                children: Default::default(),
+                size: self.size*2,
+            };
+            todo!() //TODO: expand...
         };
         self.children
             [pos.child.2 as usize]
