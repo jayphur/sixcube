@@ -29,57 +29,38 @@ trait GrowingOctree<T>: Debug + Default{
 
 
 #[cfg(test)]
-mod tests{
+mod tests{ 
     use super::GrowingOctree;
+    use rstest::*;
 
     type Inner = u128;
     type Octree = super::octree::Octree<Inner>;
-    #[test]
-    fn create(){
-        let create = |val: i16| {
-            println!("Trying to make a tree of size {}", val);
-            let _ = Octree::new(val);
-        };
-        create(-30);
-        create(30);
-        create(0);
-        create(10000);
-        create(2);
+
+    #[rstest]
+    #[case(16)]
+    #[case(10)]
+    #[case(-10)]
+    #[case(0)]
+    #[case(1)]
+    fn create_basic(#[case] min_size: i16) {
+        let new = Octree::new(min_size);
+        assert_eq!(new.get_weak((min_size,min_size,min_size)), None);
+        assert_eq!(new.get_weak((-min_size,-min_size,min_size)), None);
+        assert_eq!(new.get_weak((-min_size,min_size,-min_size)), None);
     }
-    #[test]
-    fn create_set_then_get(){
-        let single = |must_include: i16, pos: (i16,i16,i16)| {
-            println!("\nTrying to make a tree that includes {}", must_include);
-            let mut new = Octree::new(must_include);
-            println!("setting {:?} to 90 on the tree", pos);
-            *new.get_mut_strong(pos) = 90;
-            println!("success!");
-            let pos_2 = (pos.0 + 2, -pos.1, pos.2);
-            assert_eq!(new.get_weak(pos), Some(&90));
-            println!("success! get_weak({:?})",pos);
-            assert_eq!(new.get_mut_weak(pos), Some(&mut 90));
-            println!("success! get_mut_weak({:?})",pos);
-            assert_eq!(new.get_mut_strong(pos), &mut 90);
-            println!("success! get_mut_strong({:?})",pos);
-            assert_eq!(new.get_weak(pos_2), None);
-            println!("success! get_weak({:?}) is none",pos_2);
-        };
-        //within bounds
-        
-        single(16, (-12, 10, -2));
-        single(18, (-18, 0, -12));
-        single(-18, (-18, 0, -12));
-        single(18, (-0, 0, 0));
-        single(18, (-20, 0, -32));
-        single(0, (-0, 0, 0));
-        single(1, (-1, 0, -1));
-        //outside bounds (will need to grow)
-        //TODO
-        single(16, (-17, 10, -2));
-        single(16, (-17, 17, -17));
-        single(18, (-33, 0, -12));
-        single(18, (-0, 200, 0));
-        single(0, (-0, 1, 4));
-        single(1, (-2, 0, -1));
+
+    #[rstest]
+    #[case(10, (3,-4,3))] //FIXME: tree is a node too shallow
+    #[case(8, (-1,3,0))]
+    #[case(12, (14,-10,2))]
+    #[case(12, (14,40,200))]
+    fn set_get(#[case] min_size: i16, #[case] pos: (i16,i16,i16)){
+        let mut new = Octree::new(min_size);
+        *new.get_mut_strong(pos) = 90;
+        assert_eq!(new.get_weak(pos), Some(&90));
+        assert_eq!(new.get_mut_weak(pos), Some(&mut 90));
+        assert_eq!(new.get_mut_strong(pos), &mut 90);
+        assert_eq!(new.get_weak((pos.0,pos.1,pos.2 - 1)), None);
+        *new.get_mut_strong(pos) = 90;
     }
 }

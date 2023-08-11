@@ -120,7 +120,7 @@ impl<T: Debug + Default> NodeChild<T>{
 #[derive(Debug)]
 struct RootNode<T: Debug + Default>{
     children: [[[NodeChild<T>;2]; 2]; 2], //starting in top back left corner.
-    size: u16,
+    size: u16, // the width of the level is 2*size
 }
 impl<T: Default + Debug> RootNode<T>{
     fn get_weak(&self, pos: (i16,i16,i16)) -> Option<&T> {
@@ -143,11 +143,26 @@ impl<T: Default + Debug> RootNode<T>{
 
     fn get_mut_strong(&mut self, pos: (i16,i16,i16)) -> &mut T {
         let Some(pos) = self.global_pos_to_local(pos) else {
-            let new_root = RootNode::<T>{
+            // growing.
+            // increase - to *2 and + to *2, then the - must be +2 within the -2 child 
+            // and the + must be 0 within the +2 child
+            // thus no net change.
+            let mut new = RootNode::<T>{
                 children: Default::default(),
                 size: self.size*2,
             };
-            todo!() //TODO: expand...
+            for x in 0usize..2usize{
+                for y in 0usize..2usize{
+                    for z in 0usize..2usize{
+                        let mut node = BranchNode::default();
+                        node.children[z ^ 1][y ^ 1][x ^ 1] 
+                            = std::mem::take(&mut self.children[z][y][x]);
+                        new.children[z][y][x] = NodeChild::Node(Box::new(node))
+                    }
+                }
+            }
+            *self = new;
+            return self.get_mut_strong(pos);
         };
         self.children
             [pos.child.2 as usize]
@@ -187,6 +202,7 @@ impl<T: Debug + Default> RootNode<T>{
         })
     }
 }
+
 #[derive(Debug)]
 struct BranchNode<T: Debug + Default>{
     children: [[[NodeChild<T>;2]; 2]; 2], //starting in top back left corner.
@@ -221,5 +237,16 @@ impl<T: Debug + Default> BranchNode<T>{
             (pos.1 - index.1 as u16 * size),
             (pos.2 - index.2 as u16 * size));
         ((index.0, index.1, index.2), relative)
+    }
+}
+
+impl<T:Default + Debug> Default for BranchNode<T>{
+    fn default() -> Self { 
+        //FIXME: clean this up maybe. it might not be possible because rust's array init shorthand is stupid. 
+        let empty: fn() -> [NodeChild<T>; 2] = ||{[NodeChild::default(),NodeChild::default()]};
+        let empty = [[empty(),empty()],[empty(),empty()]];
+        Self { 
+            children: empty
+        }
     }
 }
