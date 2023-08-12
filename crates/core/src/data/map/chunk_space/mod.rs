@@ -1,14 +1,22 @@
+use ndarray::{ArrayBase, Array, Array3};
 use sc_prelude::*;
 
 mod octree;
 
 #[derive(Debug, Default)]
-pub(crate) struct ChunkSpace<V: Debug + Default>{
-    grid: octree::Octree<Chunk<V, 16>>
+pub(crate) struct ChunkSpace<V: Debug + Default + Clone, const SIZE: usize>{
+    grid: octree::Octree<Chunk<V, SIZE>>
 }
-#[derive(Default, Debug)]
-pub(crate) struct Chunk<V, const S: usize>{
-    _v: PhantomData<V>,
+#[derive(Debug)]
+pub(crate) struct Chunk<V: Default + Debug + Clone, const SIZE: usize>{
+    voxels: Array3<V>, 
+}
+impl<V: Default + Debug + Clone, const SIZE: usize> Default for Chunk<V, SIZE>{
+    fn default() -> Self {
+        Self {
+            voxels: Array3::<V>::default((SIZE,SIZE,SIZE)),
+        }
+    }
 }
 trait GrowingOctree<T>: Debug + Default{
     fn new(size: i16) -> Self;
