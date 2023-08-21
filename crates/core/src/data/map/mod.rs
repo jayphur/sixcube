@@ -28,11 +28,11 @@ E: Debug,
         todo!()
     }
 
-    fn get_mut(&mut self, pos: GlobalPos, dim: &dim::Dim) -> &mut Option<Voxel> {
+    fn get_mut_weak(&mut self, pos: GlobalPos, dim: &dim::Dim) -> Option<&mut Voxel> {
         todo!()
     }
 
-    fn get_mut_weak(&mut self, pos: GlobalPos, dim: &dim::Dim) -> Option<&mut Voxel> {
+    fn generate_region<D: dim::DimType>(&mut self, pos: GlobalPos, dim: &D) -> &mut Result<()> {
         todo!()
     }
 }

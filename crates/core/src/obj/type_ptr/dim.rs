@@ -5,7 +5,7 @@ use sc_prelude::*;
 #[derive(Debug)]
 pub struct DimTypePtr(&'static dyn DimType);
 impl DimType for DimTypePtr{
-    fn gen_at(&self, seed: Seed, pos: GlobalPos) -> Result<Voxel> {
+    fn gen_at(&self, seed: Seed, pos: GlobalPos) -> Voxel {
         todo!()
     }
 }

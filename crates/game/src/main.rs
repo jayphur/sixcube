@@ -1,3 +1,5 @@
-fn main(){
+mod instance;
+
+fn main() {
 
 }
