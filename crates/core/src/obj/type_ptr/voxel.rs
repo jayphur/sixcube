@@ -1,6 +1,6 @@
 use crate::{obj::voxel::{Voxel, VoxelType}, r#type::Type};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct VoxelTypePtr(&'static dyn VoxelType);
 impl VoxelType for VoxelTypePtr{
 

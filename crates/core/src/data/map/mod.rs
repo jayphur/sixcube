@@ -6,14 +6,14 @@ mod chunk_space;
 
 #[derive(Debug, Default)]
 pub struct Map<V,E> where
-V: Debug + Default,
+V: Debug + Default + Clone,
 E: Debug,
 {
-    voxels: ChunkSpace<V>,
+    voxels: ChunkSpace<V, 16>,
     _e: PhantomData<E>
 }
 impl<V,E> dim::MapTrait for Map<V,E> where
-V: Debug + Default,
+V: Debug + Default + Clone,
 E: Debug,
 {
     fn new() -> Self {

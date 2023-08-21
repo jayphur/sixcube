@@ -1,7 +1,7 @@
 use crate::{ecs::ComponentList, r#type::Type};
 use super::type_ptr::voxel::VoxelTypePtr;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Voxel{
     pub my_type: VoxelTypePtr,
     // example for a mandatory component: pub comp_thing: Thing 
