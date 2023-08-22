@@ -1,4 +1,4 @@
-use crate::{Seed, obj::{dim::{DimType, Dim, MapTrait}, voxel::Voxel}, pos::GlobalPos, r#type::Type, map::Map};
+use crate::{Seed, obj::{dim::{DimType, Dim, MapTrait}, voxel::Voxel}, pos::GlobalPos, r#type::StaticType, map::Map};
 use sc_prelude::*;
 
 
@@ -9,7 +9,7 @@ impl DimType for DimTypePtr{
         todo!()
     }
 }
-impl Type for DimTypePtr{
+impl StaticType for DimTypePtr{
     type Obj = Dim;
     fn name(&'static self) -> &crate::Name {
         todo!()

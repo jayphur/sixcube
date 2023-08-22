@@ -1,4 +1,4 @@
-use crate::r#type::Type;
+use crate::r#type::StaticType;
 
 pub mod dim;
 pub mod element;
@@ -10,5 +10,5 @@ pub mod type_ptr{
     pub mod voxel;
 }
 trait Obj{
-    type Type: Type<Obj = Self>;
+    type Type: StaticType<Obj = Self>;
 }

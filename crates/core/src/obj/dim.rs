@@ -1,5 +1,5 @@
 use sc_prelude::*;
-use crate::{data::pos::GlobalPos, r#type::Type, Seed, map::Map};
+use crate::{data::pos::GlobalPos, r#type::StaticType, Seed, map::Map};
 use super::{voxel::Voxel, Obj, type_ptr::dim::DimTypePtr, element::Element};
 
 /// Dimension. Dimension wide that/Dimension specific data.
@@ -18,7 +18,7 @@ impl Dim{
 
 
 ///The requirements that a DimType (ptr) must be able to do 
-pub trait DimType: Type<Obj=Dim>{
+pub trait DimType: StaticType<Obj=Dim>{
     fn gen_at(&self, seed: Seed, pos: GlobalPos) -> Voxel;
 }
 /// A map stores the voxels/chunks(?) in a dimension. 

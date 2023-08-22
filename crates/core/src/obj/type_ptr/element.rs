@@ -1,4 +1,4 @@
-use crate::{obj::element::{ElementType, Element}, r#type::Type};
+use crate::{obj::element::{ElementType, Element}, r#type::StaticType};
 
 
 #[derive(Debug)]
@@ -6,7 +6,7 @@ pub struct ElementTypePtr(&'static dyn ElementType);
 impl ElementType for ElementTypePtr{
 
 }
-impl Type for ElementTypePtr{
+impl StaticType for ElementTypePtr{
     type Obj = Element;
 
     fn name(&'static self) -> &crate::Name {

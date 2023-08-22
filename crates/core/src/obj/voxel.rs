@@ -1,17 +1,19 @@
-use crate::{ecs::ComponentList, r#type::Type};
+use sc_prelude::Debug;
+
+use crate::{r#type::{StaticType, DynType}};
 use super::type_ptr::voxel::VoxelTypePtr;
 
 #[derive(Debug, Clone)]
 pub struct Voxel{
-    pub my_type: VoxelTypePtr,
-    // example for a mandatory component: pub comp_thing: Thing 
-    pub comp_opt: Option<ComponentList>, //honestly we might remove this
+    pub my_type: VoxelTypePtr
 }
 
-pub trait VoxelType: Type<Obj=Voxel>{
+pub trait VoxelStaticType: StaticType<Obj=Voxel>{
 
 }
-
+pub trait VoxelDynType: DynType<Obj=Voxel>{
+    fn clone_to_box(&self) -> Box<dyn VoxelDynType<Obj=Self::Obj>>;
+}
 
 impl Default for Voxel{
     fn default() -> Self {

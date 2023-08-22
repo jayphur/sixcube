@@ -11,6 +11,5 @@ members=[
 
 [dependencies]
 sc-core = {path = "crates/core"}
-sc-render = {path = "crates/render"}
 sc-game = {path = "crates/game"}
 sc-prelude = {path = "crates/prelude"}

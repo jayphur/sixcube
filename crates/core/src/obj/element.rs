@@ -1,4 +1,4 @@
-use crate::{ecs::ComponentList, r#type::Type};
+use crate::{ecs::ComponentList, r#type::StaticType};
 
 use super::{Obj, type_ptr::element::ElementTypePtr};
 
@@ -15,6 +15,6 @@ impl Obj for Element{
 }
 
 
-pub trait ElementType: Type<Obj=Element>{
+pub trait ElementType: StaticType<Obj=Element>{
     
 }
