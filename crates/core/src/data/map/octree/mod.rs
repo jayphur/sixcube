@@ -1,7 +1,5 @@
 use sc_prelude::*;
-
 use core::panic;
-use sc_prelude::*;
 
 use super::OctreeTrait;
 
