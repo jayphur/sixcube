@@ -1,24 +1,20 @@
 use sc_prelude::*;
-use crate::{data::pos::GlobalPos, r#type::StaticType, Seed, map::Map};
-use super::{voxel::Voxel, Obj, type_ptr::dim::DimTypePtr, element::Element};
+use crate::{data::pos::GlobalPos, Seed, map::Map, types::Type};
+use super::{voxel::Voxel, element::Element};
+
 
 /// Dimension. Dimension wide that/Dimension specific data.
 #[derive(Debug)]
 pub struct Dim{
-    pub my_type: DimTypePtr,
+    pub my_type: i16,
     pub map: Map<Voxel, Element>,
-}
-impl Obj for Dim{
-    type Type = DimTypePtr;
 }
 impl Dim{
     
 }
 
-
-
 ///The requirements that a DimType (ptr) must be able to do 
-pub trait DimType: StaticType<Obj=Dim>{
+pub trait DimType: Type<Dim>{
     fn gen_at(&self, seed: Seed, pos: GlobalPos) -> Voxel;
 }
 /// A map stores the voxels/chunks(?) in a dimension. 
@@ -34,4 +30,12 @@ pub trait MapTrait: Debug{
     fn generate_region<D: DimType>(&mut self, pos: GlobalPos, dim: &D) -> &mut Result<()>;
     /// Get this voxel mutably if you can.
     fn get_mut_weak(&mut self, pos: GlobalPos, dim: &Dim) -> Option<&mut Voxel>;
+}
+
+
+dyn_clone::clone_trait_object!(DimType);
+#[derive(Debug, Clone)]
+pub enum VoxelTypePtr{
+    Static(&'static dyn DimType),
+    Dyn(Box<dyn DimType>)
 }

@@ -4,9 +4,21 @@ use sc_prelude::*;
 mod octree;
 
 #[derive(Debug, Default)]
-pub(crate) struct ChunkSpace<V: Debug + Default + Clone, const SIZE: usize>{
-    grid: octree::Octree<Chunk<V, SIZE>>
+pub(crate) struct ChunkSpace<V: Debug + Clone, const SIZE: usize>{
+    grid: octree::Octree<Chunk<Option<V>, SIZE>>
 }
+trait GrowingOctree<T>: Debug + Default{
+    fn new(size: i16) -> Self;
+    fn get_weak(&self, pos: (i16,i16,i16)) -> Option<&T>;
+    /// Will not create a new one if this position doesn't exist.
+    fn get_mut_weak(&mut self, pos: (i16,i16,i16)) -> Option<&mut T>;
+    /// Will create a new one if this position doesn't exist.
+    fn get_mut_strong(&mut self, pos: (i16,i16,i16)) -> &mut T;
+}
+
+
+
+
 #[derive(Debug)]
 pub(crate) struct Chunk<V: Default + Debug + Clone, const SIZE: usize>{
     voxels: Array3<V>, 
@@ -17,14 +29,6 @@ impl<V: Default + Debug + Clone, const SIZE: usize> Default for Chunk<V, SIZE>{
             voxels: Array3::<V>::default((SIZE,SIZE,SIZE)),
         }
     }
-}
-trait GrowingOctree<T>: Debug + Default{
-    fn new(size: i16) -> Self;
-    fn get_weak(&self, pos: (i16,i16,i16)) -> Option<&T>;
-    /// Will not create a new one if this position doesn't exist.
-    fn get_mut_weak(&mut self, pos: (i16,i16,i16)) -> Option<&mut T>;
-    /// Will create a new one if this position doesn't exist.
-    fn get_mut_strong(&mut self, pos: (i16,i16,i16)) -> &mut T;
 }
 
 

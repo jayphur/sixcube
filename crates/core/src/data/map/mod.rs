@@ -6,7 +6,7 @@ mod chunk_space;
 
 #[derive(Debug, Default)]
 pub struct Map<V,E> where
-V: Debug + Default + Clone,
+V: Debug + Clone,
 E: Debug,
 {
     voxels: ChunkSpace<V, 16>,
