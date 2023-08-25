@@ -5,11 +5,6 @@ use sc_prelude::Debug;
 pub struct Voxel {
     pub my_type: VoxelTypePtr,
 }
-impl Default for Voxel {
-    fn default() -> Self {
-        Self { my_type: todo!() }
-    }
-}
 
 pub trait VoxelType: Type<Voxel> {}
 

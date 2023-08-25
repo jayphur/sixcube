@@ -1,6 +1,12 @@
+use std::{collections::VecDeque, mem};
+
 use crate::{
-    obj::{dim, voxel::Voxel},
-    pos::GlobalPos,
+    obj::{
+        dim::{self, MapError, DimTypeTypePtr},
+        element::Element,
+        voxel::Voxel,
+    },
+    pos::{GlobalPos, Pos, RelativePos},
     Seed,
 };
 use sc_prelude::*;
@@ -10,23 +16,21 @@ use self::{chunk::Chunk, octree::Octree};
 mod chunk;
 mod octree;
 
-const CHUNK_SIZE: usize = 16;
+const CHUNK_SIZE: i16 = 16;
+const CHUNK_SIZE_U: usize = 16;
 
 #[derive(Debug, Default)]
 pub struct Map<V, E>
 where
-    V: Debug + Default + Clone,
+    V: Debug + Clone,
     E: Debug,
 {
-    voxels: Octree<Option<Chunk<V, CHUNK_SIZE>>>,
+    chunks: Octree<Chunk<Option<V>, CHUNK_SIZE_U>>,
     seed: Seed,
+    to_generate: VecDeque<GlobalPos>,
     _e: PhantomData<E>,
 }
-impl<V, E> dim::MapTrait for Map<V, E>
-where
-    V: Debug + Default + Clone,
-    E: Debug,
-{
+impl dim::MapTrait for Map<Voxel, Element> {
     fn new() -> Self {
         todo!()
     }
@@ -35,17 +39,51 @@ where
         self.seed = seed;
     }
 
-    fn get(&self, pos: GlobalPos) -> Option<&Voxel> {
-        let chunk = self.voxels.get_weak(pos.tuple())?.as_ref()?;
+    fn get(&self, pos: GlobalPos) -> Result<Option<&Voxel>, MapError> {
         todo!()
     }
 
-    fn get_mut_weak(&mut self, pos: GlobalPos, dim: &dim::Dim) -> Option<&mut Voxel> {
+    fn get_mut_weak(&mut self, pos: GlobalPos) -> Result<Option<&mut Voxel>, MapError> {
         todo!()
     }
 
-    fn generate_region<D: dim::DimType>(&mut self, pos: GlobalPos, dim: &D) -> &mut Result<()> {
-        todo!()
+    fn generate(&mut self, dim: &DimTypeTypePtr) -> Result<()> {
+        for pos in mem::take(&mut self.to_generate){
+            self.generate_chunk(dim, pos)?;
+        }
+        Ok(())
+    }
+
+}
+impl<V, E> Map<V, E>
+where
+    V: Debug + Default + Clone,
+    E: Debug,
+{
+    fn all_chunks_in(pos1: GlobalPos, pos2: GlobalPos) -> impl Iterator<Item = GlobalPos> { 
+        //Why did i make this...
+        let pos1 = pos1.round(CHUNK_SIZE);
+        let pos2 = pos2.round(CHUNK_SIZE);
+        let (dx, dy, dz) = pos1.sub(pos2).round(CHUNK_SIZE).tuple::<i16>();
+        (1..=dx / CHUNK_SIZE).flat_map(move |x| {
+            (1..=dy / CHUNK_SIZE).flat_map(move |y| {
+                (1..=dz / CHUNK_SIZE).map(move |z| {
+                    GlobalPos::new((x.clone() * CHUNK_SIZE, y * CHUNK_SIZE, z * CHUNK_SIZE))
+                })
+            })
+        })
+    }
+}
+impl<E: Debug> Map<Voxel,E>{
+    fn generate_chunk(&mut self, dim: &DimTypeTypePtr, pos: GlobalPos) -> Result<()>{
+        for &relative in Chunk::<Option<Voxel>, CHUNK_SIZE_U>::all_pos(){
+            let pointer = self.chunks.get_mut_strong(pos.tuple()).get_mut(relative)?;
+            *pointer = match dim{
+                DimTypeTypePtr::Static(d) => d.gen_at(self.seed, pos),
+                DimTypeTypePtr::Dyn(d) => d.gen_at(self.seed, pos),
+            }
+        }
+        Ok(())
     }
 }
 
@@ -56,4 +94,11 @@ trait OctreeTrait<T: Default + Debug>: Debug + Default {
     fn get_mut_weak(&mut self, pos: (i16, i16, i16)) -> Option<&mut T>;
     /// Will create a new one if this position doesn't exist.
     fn get_mut_strong(&mut self, pos: (i16, i16, i16)) -> &mut T;
+}
+
+trait ChunkTrait<T: Default + Debug + Clone + Sized>: Debug + Default {
+    fn new() -> Self;
+    fn get(&self, pos: RelativePos) -> Result<&T>;
+    fn get_mut(&mut self, pos: RelativePos) -> Result<&mut T>;
+    fn all_pos() -> &'static Vec<RelativePos>;
 }

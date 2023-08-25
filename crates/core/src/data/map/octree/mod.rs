@@ -1,5 +1,5 @@
-use sc_prelude::*;
 use core::panic;
+use sc_prelude::*;
 
 use super::OctreeTrait;
 
@@ -247,7 +247,6 @@ impl<T: Default + Debug> Default for BranchNode<T> {
         Self { children: empty }
     }
 }
-
 
 #[cfg(test)]
 mod tests {

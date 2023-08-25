@@ -1,7 +1,6 @@
 mod instance;
 // test
-use kiss3d::light::Light;
-use kiss3d::nalgebra::{UnitQuaternion, Vector3};
+
 use kiss3d::window::Window;
 
 fn main() {

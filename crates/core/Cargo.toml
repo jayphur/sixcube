@@ -9,6 +9,7 @@ edition = "2021"
 ndarray = "0.15.6"
 sc-prelude = { path = "../prelude" }
 dyn-clone = "1.0.13"
+lazy_static = "1.4.0"
 
 [dev-dependencies]
 rstest = "0.18.1"
