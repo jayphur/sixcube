@@ -24,11 +24,19 @@ pub trait MapTrait: Debug {
     fn get(&self, pos: GlobalPos) -> Result<Option<&Voxel>, MapError>;
     /// Get this voxel mutably if you can.
     fn get_mut_weak(&mut self, pos: GlobalPos) -> Result<Option<&mut Voxel>, MapError>;
+    /// Load stuff thats gotta be loaded.
     fn load(&mut self, dim: &DimTypeTypePtr) -> Result<()>;
+    /// Generate stuff stuff thats gotta be generated.
+    fn gen(&mut self, dim: &DimTypeTypePtr) -> Result<()>;
+
 }
+#[derive(thiserror::Error, Debug)]
 pub enum MapError {
-    UnloadedRegion,
-    UnGeneratedRegion,
+    #[error("Attempting to access loaded chunk, please generate the chunk.")]
+    Unloaded,
+    #[error("Attempting to access generated chunk, please generate the chunk.")]
+    UnGenerated,
+    #[error("Fatal error in map: {0}")]
     Fatal(Error),
 }
 

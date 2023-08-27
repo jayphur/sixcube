@@ -1,5 +1,4 @@
 use std::collections::VecDeque;
-
 use crate::{
     obj::{
         dim::{self, MapError, DimTypeTypePtr},
@@ -12,8 +11,10 @@ use crate::{
 use sc_prelude::*;
 use self::{chunk::Chunk, octree::Octree};
 use crate::CHUNK_SIZE;
+use load::LoadOpt;
 
 mod chunk;
+mod load;
 mod octree;
 
 #[derive(Debug)]
@@ -22,7 +23,7 @@ where
     V: Debug + Clone,
     E: Debug,
 {
-    chunks: Octree<Chunk<Option<V>, CHUNK_SIZE>>,
+    chunks: Octree<LoadOpt<Chunk<Option<V>, CHUNK_SIZE>>>,
     seed: Seed,
     to_generate: VecDeque<GlobalPos>,
     to_loading: VecDeque<GlobalPos>,
@@ -49,6 +50,10 @@ impl dim::MapTrait for Map<Voxel, Element> {
         todo!()
     }
 
+    fn gen(&mut self, dim: &DimTypeTypePtr) -> Result<()> {
+        todo!()
+    }
+
 }
 impl<V, E> Map<V, E>
 where
@@ -69,7 +74,7 @@ where
 impl<E: Debug> Map<Voxel,E>{
     fn generate_chunk(&mut self, dim: &DimTypeTypePtr, pos: GlobalPos) -> Result<()>{
         let chunk_pos = pos.chunk();
-        let chunk = self.chunks.get_mut_strong(chunk_pos);
+        let chunk = self.chunks.get_mut_strong(chunk_pos).into_loaded_mut()?;
         match dim{
             DimTypeTypePtr::Static(d) => {
                 for &relative in Chunk::<Option<Voxel>, CHUNK_SIZE>::all_pos(){
