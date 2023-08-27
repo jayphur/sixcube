@@ -6,7 +6,7 @@ use crate::pos::RelativePos;
 
 use super::ChunkTrait;
 use crate::CHUNK_SIZE as SIZE;
-use crate::CHUNK_SIZE_U as SIZE_U;
+use crate::CHUNK_SIZE as SIZE_U;
 
 #[derive(Debug)]
 pub(crate) struct Chunk<T: Default + Debug + Clone, const S: usize> {
@@ -41,10 +41,11 @@ impl<T: Default + Debug + Clone> ChunkTrait<T> for Chunk<T, SIZE_U> {
 
 lazy_static! {
     static ref ALL_POS: Vec<RelativePos> = {
+        let size = SIZE as i16;
         let mut vec: Vec<_> = Vec::with_capacity(SIZE.pow(3) as usize);
-        for x in 0..SIZE {
-            for y in 0..SIZE {
-                for z in 0..SIZE {
+        for x in 0..size {
+            for y in 0..size {
+                for z in 0..size {
                     vec.push(RelativePos::new((x, y, z)));
                 }
             }

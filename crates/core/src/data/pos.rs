@@ -4,7 +4,7 @@ use std::{
     ops::{Div, Mul, Rem, Sub},
 };
 
-use crate::CHUNK_SIZE;
+const CHUNK_SIZE: i16 = crate::CHUNK_SIZE as i16;
 
 pub trait Pos<T: Copy + Clone + Debug + Default>: Copy + Clone + Default + Debug {
     fn x(&self) -> T;

@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, mem};
+use std::collections::VecDeque;
 
 use crate::{
     obj::{
@@ -6,12 +6,12 @@ use crate::{
         element::Element,
         voxel::Voxel,
     },
-    pos::{GlobalPos, Pos, RelativePos},
-    Seed, CHUNK_SIZE,
+    pos::{GlobalPos, RelativePos},
+    Seed,
 };
 use sc_prelude::*;
 use self::{chunk::Chunk, octree::Octree};
-use crate::CHUNK_SIZE_U;
+use crate::CHUNK_SIZE;
 
 mod chunk;
 mod octree;
@@ -22,7 +22,7 @@ where
     V: Debug + Clone,
     E: Debug,
 {
-    chunks: Octree<Chunk<Option<V>, CHUNK_SIZE_U>>,
+    chunks: Octree<Chunk<Option<V>, CHUNK_SIZE>>,
     seed: Seed,
     to_generate: VecDeque<GlobalPos>,
     to_loading: VecDeque<GlobalPos>,
@@ -63,13 +63,13 @@ impl<E: Debug> Map<Voxel,E>{
         let chunk = self.chunks.get_mut_strong(chunk_pos);
         match dim{
             DimTypeTypePtr::Static(d) => {
-                for &relative in Chunk::<Option<Voxel>, CHUNK_SIZE_U>::all_pos(){
+                for &relative in Chunk::<Option<Voxel>, CHUNK_SIZE>::all_pos(){
                     *chunk.get_mut(relative)? = 
                         d.gen_at(self.seed, GlobalPos::new_from_parts(chunk_pos, relative));                
                     }
             },
             DimTypeTypePtr::Dyn(d) => {
-                for &relative in Chunk::<Option<Voxel>, CHUNK_SIZE_U>::all_pos(){
+                for &relative in Chunk::<Option<Voxel>, CHUNK_SIZE>::all_pos(){
                     *chunk.get_mut(relative)? = 
                         d.gen_at(self.seed, GlobalPos::new_from_parts(chunk_pos, relative));
                 }
