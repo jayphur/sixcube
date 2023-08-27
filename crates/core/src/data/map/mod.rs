@@ -16,7 +16,7 @@ use crate::CHUNK_SIZE;
 mod chunk;
 mod octree;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Map<V, E>
 where
     V: Debug + Clone,
@@ -30,7 +30,7 @@ where
 }
 impl dim::MapTrait for Map<Voxel, Element> {
     fn new() -> Self {
-        todo!()
+        Map::default()
     }
 
     fn set_seed(&mut self, seed: Seed) {
@@ -52,10 +52,19 @@ impl dim::MapTrait for Map<Voxel, Element> {
 }
 impl<V, E> Map<V, E>
 where
-    V: Debug + Default + Clone,
+    V: Debug + Clone,
     E: Debug,
 {
 
+}
+impl<V, E> Default for Map<V, E>
+where
+    V: Debug + Clone,
+    E: Debug,
+{
+    fn default() -> Self {
+        Self { chunks: Default::default(), seed: Default::default(), to_generate: Default::default(), to_loading: Default::default(), _e: Default::default() }
+    }
 }
 impl<E: Debug> Map<Voxel,E>{
     fn generate_chunk(&mut self, dim: &DimTypeTypePtr, pos: GlobalPos) -> Result<()>{
