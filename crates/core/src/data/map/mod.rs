@@ -79,13 +79,13 @@ impl<E: Debug> Map<Voxel,E>{
             DimTypeTypePtr::Static(d) => {
                 for &relative in Chunk::<Option<Voxel>, CHUNK_SIZE>::all_pos(){
                     *chunk.get_mut(relative)? = 
-                        d.gen_at(self.seed, GlobalPos::new_from_parts(chunk_pos, relative));                
+                        d.gen(self.seed, GlobalPos::new_from_parts(chunk_pos, relative));                
                     }
             },
             DimTypeTypePtr::Dyn(d) => {
                 for &relative in Chunk::<Option<Voxel>, CHUNK_SIZE>::all_pos(){
                     *chunk.get_mut(relative)? = 
-                        d.gen_at(self.seed, GlobalPos::new_from_parts(chunk_pos, relative));
+                        d.gen(self.seed, GlobalPos::new_from_parts(chunk_pos, relative));
                 }
             },
         }

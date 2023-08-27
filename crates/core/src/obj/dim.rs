@@ -12,7 +12,7 @@ impl Dim {}
 
 ///The requirements that a DimType (ptr) must be able to do
 pub trait DimType: Type<Dim> {
-    fn gen_at(&self, seed: Seed, pos: GlobalPos) -> Option<Voxel>;
+    fn gen(&self, seed: Seed, pos: GlobalPos) -> Option<Voxel>;
 }
 /// A map stores the voxels/chunks(?) in a dimension.
 /// This is the data structure that holds the voxels.
@@ -48,10 +48,10 @@ pub enum DimTypeTypePtr {
 }
 
 impl DimType for DimTypeTypePtr{
-    fn gen_at(&self, seed: Seed, pos: GlobalPos) -> Option<Voxel> {
+    fn gen(&self, seed: Seed, pos: GlobalPos) -> Option<Voxel> {
         match self{
-            DimTypeTypePtr::Static(p) => p.gen_at(seed,pos),
-            DimTypeTypePtr::Dyn(p) => p.gen_at(seed,pos),
+            DimTypeTypePtr::Static(p) => p.gen(seed,pos),
+            DimTypeTypePtr::Dyn(p) => p.gen(seed,pos),
         }
     }
 }
