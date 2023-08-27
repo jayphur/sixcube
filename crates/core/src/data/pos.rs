@@ -4,6 +4,8 @@ use std::{
     ops::{Div, Mul, Rem, Sub},
 };
 
+use crate::CHUNK_SIZE;
+
 pub trait Pos<T: Copy + Clone + Debug + Default>: Copy + Clone + Default + Debug {
     fn x(&self) -> T;
     fn y(&self) -> T;
@@ -72,32 +74,43 @@ impl Pos<i16> for RelativePos {
     }
 }
 #[derive(Default, Debug, Clone, Copy)]
-pub struct GlobalPos(i16, i16, i16);
+pub struct GlobalPos{
+    chunk: (i16,i16,i16),
+    relative: RelativePos,
+}
 impl GlobalPos {
-    pub fn relative_to(&self, chunk_size: i16) -> RelativePos {
-        RelativePos::new(self.modulo(chunk_size).tuple())
+    #[inline(always)]
+    pub fn relative(&self) -> RelativePos {
+        RelativePos::new(self.modulo(CHUNK_SIZE).tuple())
     }
-    pub fn round(&self, to: i16) -> Self {
-        let reminder = self.modulo(to);
-        self.sub(reminder)
+    #[inline(always)]
+    pub fn chunk(&self) -> (i16,i16,i16){
+        self.chunk
+    }
+    #[inline(always)]
+    pub fn new_from_parts(chunk: (i16,i16,i16), relative: RelativePos) -> Self{
+        Self { chunk, relative }
     }
 }
 
 impl Pos<i16> for GlobalPos {
     #[inline(always)]
     fn x(&self) -> i16 {
-        self.0
+        self.chunk.0*CHUNK_SIZE + self.relative.0
     }
     #[inline(always)]
     fn y(&self) -> i16 {
-        self.1
+        self.chunk.1*CHUNK_SIZE + self.relative.1
     }
     #[inline(always)]
     fn z(&self) -> i16 {
-        self.2
+        self.chunk.2*CHUNK_SIZE + self.relative.2
     }
     #[inline(always)]
     fn new(tuple: (i16, i16, i16)) -> Self {
-        Self(tuple.0, tuple.1, tuple.2)
+        Self{
+            chunk: (tuple.0 / CHUNK_SIZE, tuple.1 / CHUNK_SIZE, tuple.2 / CHUNK_SIZE),
+            relative: RelativePos::new((tuple.0 % CHUNK_SIZE, tuple.1 % CHUNK_SIZE, tuple.2 % CHUNK_SIZE)),
+        }
     }
 }

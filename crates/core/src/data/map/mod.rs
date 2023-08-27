@@ -7,17 +7,14 @@ use crate::{
         voxel::Voxel,
     },
     pos::{GlobalPos, Pos, RelativePos},
-    Seed,
+    Seed, CHUNK_SIZE,
 };
 use sc_prelude::*;
-
 use self::{chunk::Chunk, octree::Octree};
+use crate::CHUNK_SIZE_U;
 
 mod chunk;
 mod octree;
-
-const CHUNK_SIZE: i16 = 16;
-const CHUNK_SIZE_U: usize = 16;
 
 #[derive(Debug, Default)]
 pub struct Map<V, E>
@@ -28,6 +25,7 @@ where
     chunks: Octree<Chunk<Option<V>, CHUNK_SIZE_U>>,
     seed: Seed,
     to_generate: VecDeque<GlobalPos>,
+    to_loading: VecDeque<GlobalPos>,
     _e: PhantomData<E>,
 }
 impl dim::MapTrait for Map<Voxel, Element> {
@@ -47,11 +45,8 @@ impl dim::MapTrait for Map<Voxel, Element> {
         todo!()
     }
 
-    fn generate(&mut self, dim: &DimTypeTypePtr) -> Result<()> {
-        for pos in mem::take(&mut self.to_generate){
-            self.generate_chunk(dim, pos)?;
-        }
-        Ok(())
+    fn load(&mut self, dim: &DimTypeTypePtr) -> Result<()> {
+        todo!()
     }
 
 }
@@ -60,29 +55,27 @@ where
     V: Debug + Default + Clone,
     E: Debug,
 {
-    fn all_chunks_in(pos1: GlobalPos, pos2: GlobalPos) -> impl Iterator<Item = GlobalPos> { 
-        //Why did i make this...
-        let pos1 = pos1.round(CHUNK_SIZE);
-        let pos2 = pos2.round(CHUNK_SIZE);
-        let (dx, dy, dz) = pos1.sub(pos2).round(CHUNK_SIZE).tuple::<i16>();
-        (1..=dx / CHUNK_SIZE).flat_map(move |x| {
-            (1..=dy / CHUNK_SIZE).flat_map(move |y| {
-                (1..=dz / CHUNK_SIZE).map(move |z| {
-                    GlobalPos::new((x.clone() * CHUNK_SIZE, y * CHUNK_SIZE, z * CHUNK_SIZE))
-                })
-            })
-        })
-    }
+
 }
 impl<E: Debug> Map<Voxel,E>{
     fn generate_chunk(&mut self, dim: &DimTypeTypePtr, pos: GlobalPos) -> Result<()>{
-        for &relative in Chunk::<Option<Voxel>, CHUNK_SIZE_U>::all_pos(){
-            let pointer = self.chunks.get_mut_strong(pos.tuple()).get_mut(relative)?;
-            *pointer = match dim{
-                DimTypeTypePtr::Static(d) => d.gen_at(self.seed, pos),
-                DimTypeTypePtr::Dyn(d) => d.gen_at(self.seed, pos),
-            }
+        let chunk_pos = pos.chunk();
+        let chunk = self.chunks.get_mut_strong(chunk_pos);
+        match dim{
+            DimTypeTypePtr::Static(d) => {
+                for &relative in Chunk::<Option<Voxel>, CHUNK_SIZE_U>::all_pos(){
+                    *chunk.get_mut(relative)? = 
+                        d.gen_at(self.seed, GlobalPos::new_from_parts(chunk_pos, relative));                
+                    }
+            },
+            DimTypeTypePtr::Dyn(d) => {
+                for &relative in Chunk::<Option<Voxel>, CHUNK_SIZE_U>::all_pos(){
+                    *chunk.get_mut(relative)? = 
+                        d.gen_at(self.seed, GlobalPos::new_from_parts(chunk_pos, relative));
+                }
+            },
         }
+        
         Ok(())
     }
 }

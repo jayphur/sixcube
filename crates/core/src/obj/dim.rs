@@ -24,7 +24,7 @@ pub trait MapTrait: Debug {
     fn get(&self, pos: GlobalPos) -> Result<Option<&Voxel>, MapError>;
     /// Get this voxel mutably if you can.
     fn get_mut_weak(&mut self, pos: GlobalPos) -> Result<Option<&mut Voxel>, MapError>;
-    fn generate(&mut self, dim: &DimTypeTypePtr) -> Result<()>;
+    fn load(&mut self, dim: &DimTypeTypePtr) -> Result<()>;
 }
 pub enum MapError {
     UnloadedRegion,
@@ -38,6 +38,7 @@ pub enum DimTypeTypePtr {
     Static(&'static dyn DimType),
     Dyn(Box<dyn DimType>),
 }
+
 impl DimType for DimTypeTypePtr{
     fn gen_at(&self, seed: Seed, pos: GlobalPos) -> Option<Voxel> {
         match self{

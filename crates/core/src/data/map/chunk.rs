@@ -5,8 +5,8 @@ use crate::pos::Pos;
 use crate::pos::RelativePos;
 
 use super::ChunkTrait;
-use super::CHUNK_SIZE as SIZE;
-use super::CHUNK_SIZE_U as SIZE_U;
+use crate::CHUNK_SIZE as SIZE;
+use crate::CHUNK_SIZE_U as SIZE_U;
 
 #[derive(Debug)]
 pub(crate) struct Chunk<T: Default + Debug + Clone, const S: usize> {
