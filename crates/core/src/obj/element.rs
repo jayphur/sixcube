@@ -1,4 +1,4 @@
-use crate::types::Type;
+use crate::types::ObjType;
 
 /// An 'entity' that exists in a dimension that is not confined to the grid.
 /// It is not a voxel, but it does has position and some shared components.
@@ -8,11 +8,5 @@ pub struct Element {
     pub my_type: i16,
 }
 
-pub trait ElementType: Type<Element> {}
-
-dyn_clone::clone_trait_object!(ElementType);
-#[derive(Debug, Clone)]
-pub enum ElementTypePtr {
-    Static(&'static dyn ElementType),
-    Dyn(Box<dyn ElementType>),
-}
+pub trait ElementType: ObjType<Element> {}
+trait_ptr_enum!(ElementType);

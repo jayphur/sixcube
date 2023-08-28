@@ -114,3 +114,45 @@ impl Pos<i16> for GlobalPos {
         }
     }
 }
+
+///Like a global position but not chunk wise.
+#[derive(Default, Debug, Clone, Copy)]
+pub struct GlobalAbsPos{
+    tuple: (i16,i16,i16)
+}
+impl Pos<i16> for GlobalAbsPos{
+    fn x(&self) -> i16 {
+        self.tuple.0
+    }
+
+    fn y(&self) -> i16 {
+        self.tuple.1
+    }
+
+    fn z(&self) -> i16 {
+        self.tuple.2
+    }
+
+    fn new(tuple: (i16, i16, i16)) -> Self {
+        Self{
+            tuple,
+        }
+    }
+}
+impl Into<GlobalPos> for GlobalAbsPos{
+    #[inline(always)]
+    fn into(self) -> GlobalPos {
+        GlobalPos::new(self.tuple)
+    }
+}
+impl From<GlobalPos> for GlobalAbsPos{
+    #[inline]
+    fn from(value: GlobalPos) -> Self {
+        Self { tuple: (
+                value.chunk.0 * CHUNK_SIZE + value.relative.0,
+                value.chunk.1 * CHUNK_SIZE + value.relative.1,
+                value.chunk.2 * CHUNK_SIZE + value.relative.2,
+            ) 
+        }
+    }
+}

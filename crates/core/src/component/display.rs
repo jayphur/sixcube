@@ -1,14 +1,14 @@
 use sc_prelude::*;
-use std::sync::mpsc;
+
+use crate::pos::{Pos, GlobalAbsPos};
 
 pub trait Displayable {
     fn get_model(&self) -> Vec<Shape>;
-    fn send_shapes(&self, tx: &mpsc::Sender<Shape>) -> Result<()> {
-        for shape in self.get_model() {
-            tx.send(shape)?;
-        }
-        Ok(())
-    }
 }
 
-pub enum Shape {}
+pub enum Shape {
+    Cube{
+        position: GlobalAbsPos,
+        color: (u8,u8,u8) // temporary
+    }
+}
