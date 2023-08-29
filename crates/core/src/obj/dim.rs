@@ -28,7 +28,6 @@ pub trait MapTrait: Debug {
     fn load(&mut self, dim: &DimTypeTypePtr) -> Result<()>;
     /// Generate stuff stuff thats gotta be generated.
     fn gen(&mut self, dim: &DimTypeTypePtr) -> Result<()>;
-
 }
 #[derive(thiserror::Error, Debug)]
 pub enum MapError {
