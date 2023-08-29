@@ -24,14 +24,14 @@ impl<T: Default + Debug + Clone> ChunkTrait<T> for Chunk<T, SIZE_U> {
         Self::default()
     }
 
-    fn get(&self, pos: RelativePos) -> Result<&T> {
-        let pos: (usize, usize, usize) = pos.try_tuple()?;
-        Ok(&self.voxels[pos.2][pos.1][pos.0])
+    fn get(&self, pos: RelativePos) -> &T {
+        let pos: (usize, usize, usize) = pos.try_tuple().unwrap();
+        &self.voxels[pos.2][pos.1][pos.0]
     }
 
-    fn get_mut(&mut self, pos: RelativePos) -> Result<&mut T> {
-        let pos: (usize, usize, usize) = pos.try_tuple()?;
-        Ok(&mut self.voxels[pos.2][pos.1][pos.0])
+    fn get_mut(&mut self, pos: RelativePos) -> &mut T {
+        let pos: (usize, usize, usize) = pos.try_tuple().unwrap();
+        &mut self.voxels[pos.2][pos.1][pos.0]
     }
 
     fn all_pos() -> &'static Vec<RelativePos> {

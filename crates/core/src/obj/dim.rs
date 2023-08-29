@@ -21,9 +21,11 @@ pub trait MapTrait: Debug {
     /// The seed is data that is guaranteed to be used in every dim.
     fn set_seed(&mut self, seed: Seed);
     /// Get this voxel if you can.
-    fn get(&self, pos: GlobalPos) -> Result<Option<&Voxel>, MapError>;
+    fn get(&self, pos: GlobalPos) -> Result<&Option<Voxel>, MapError>;
     /// Get this voxel mutably if you can.
-    fn get_mut_weak(&mut self, pos: GlobalPos) -> Result<Option<&mut Voxel>, MapError>;
+    fn get_mut_weak(&mut self, pos: GlobalPos) -> Result<&mut Option<Voxel>, MapError>;
+    /// Get this voxel mutably, setting to load if not.
+    fn get_mut_strong(&mut self, pos: GlobalPos) -> Result<&mut Option<Voxel>, MapError>;
     /// Load stuff thats gotta be loaded.
     fn load(&mut self, dim: &DimTypeTypePtr) -> Result<()>;
     /// Generate stuff stuff thats gotta be generated.
