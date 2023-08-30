@@ -116,7 +116,7 @@ impl Pos<i16> for GlobalPos {
 }
 
 ///Like a global position but not chunk wise.
-#[derive(Default, Debug, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct GlobalAbsPos{
     tuple: (i16,i16,i16)
 }
@@ -154,5 +154,24 @@ impl From<GlobalPos> for GlobalAbsPos{
                 value.chunk.2 * CHUNK_SIZE + value.relative.2,
             ) 
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use rstest::*;
+    use super::*;
+
+    #[rstest]
+    #[case((0,0,0),(12,13,14))]
+    #[case((1,-3,2),(6,4,3))]    
+    #[case((20,-3,0),(26,4,3))]    
+    fn global_to_abs(#[case] chunk: (i16,i16,i16),#[case] relative: (i16,i16,i16)){
+        let global = GlobalPos::new_from_parts(chunk, RelativePos::new(relative));
+        let abs: GlobalAbsPos = global.into();
+        assert_eq!(abs.x(), chunk.0*CHUNK_SIZE + relative.0);
+        assert_eq!(abs.y(), chunk.1*CHUNK_SIZE + relative.1);
+        assert_eq!(abs.z(), chunk.2*CHUNK_SIZE + relative.2);
+        assert_eq!(abs, global.into());
     }
 }

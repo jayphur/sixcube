@@ -8,5 +8,7 @@ pub struct Element {
     pub my_type: i16,
 }
 
-pub trait ElementType: ObjType<Element> {}
+pub trait ElementType: ObjType<Element> {
+    fn new(&self) -> ElementTypePtr;
+}
 trait_ptr_enum!(ElementType);

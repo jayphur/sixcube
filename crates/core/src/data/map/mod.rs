@@ -1,13 +1,14 @@
 use std::{collections::VecDeque, mem};
 use crate::{
     obj::{
-        dim::{self, MapError, DimTypeTypePtr, DimType},
+        dim::{self, MapError, DimTypePtr},
         element::Element,
         voxel::Voxel,
     },
     pos::{GlobalPos, RelativePos, Pos},
     Seed,
 };
+use async_trait::async_trait;
 use sc_prelude::*;
 use self::{chunk::Chunk, octree::Octree};
 use crate::CHUNK_SIZE;
@@ -20,7 +21,7 @@ mod octree;
 #[derive(Debug)]
 pub struct Map<V, E>
 where
-    V: Debug + Clone,
+    V: Debug + Clone + Send,
     E: Debug,
 {
     chunks: Octree<LoadOpt<Chunk<Option<V>, CHUNK_SIZE>>>,
@@ -29,6 +30,7 @@ where
     to_load: VecDeque<GlobalPos>,
     _e: PhantomData<E>,
 }
+#[async_trait]
 impl dim::MapTrait for Map<Voxel, Element> {
     fn new() -> Self {
         Map::default()
@@ -75,10 +77,10 @@ impl dim::MapTrait for Map<Voxel, Element> {
         }
     }
 
-    fn load(&mut self, dim: &DimTypeTypePtr) -> Result<()> {
+    async fn load(&mut self, dim: &DimTypePtr) -> Result<()> {
         for pos in self.to_load.drain(..){
             if let Some(chunk) = self.chunks.get_mut_weak(pos.chunk()){
-                chunk.load()?
+                chunk.try_load().await?
             }
             else{
                 //TODO: log
@@ -88,7 +90,7 @@ impl dim::MapTrait for Map<Voxel, Element> {
         Ok(())
     }
 
-    fn gen(&mut self, dim: &DimTypeTypePtr) -> Result<()> {
+    fn gen(&mut self, dim: &DimTypePtr) -> Result<()> {
         for pos in mem::take(&mut self.to_generate){
             self.generate_chunk(dim, pos)?;
         }
@@ -98,14 +100,14 @@ impl dim::MapTrait for Map<Voxel, Element> {
 }
 impl<V, E> Map<V, E>
 where
-    V: Debug + Clone,
+    V: Debug + Clone + Send,
     E: Debug,
 {
 
 }
 impl<V, E> Default for Map<V, E>
 where
-    V: Debug + Clone,
+    V: Debug + Clone + Send,
     E: Debug,
 {
     fn default() -> Self {
@@ -113,12 +115,12 @@ where
     }
 }
 impl<E: Debug> Map<Voxel,E>{
-    fn generate_chunk(&mut self, dim: &DimTypeTypePtr, pos: GlobalPos) -> Result<()>{
+    fn generate_chunk(&mut self, dim: &DimTypePtr, pos: GlobalPos) -> Result<()>{
         let global = pos;
         let mut new: Chunk<Option<Voxel>, CHUNK_SIZE> = Chunk::default();
         for relative in Chunk::<Option<Voxel>, CHUNK_SIZE>::all_pos(){
             let generate_position = GlobalPos::new_from_parts(global.chunk(), *relative);
-            *new.get_mut(*relative) = dim.gen(self.seed, generate_position);
+            *new.get_mut(*relative) = dim.as_ref().gen(self.seed, generate_position);
         }
         *self.chunks.get_mut_strong(pos.chunk()) = LoadOpt::new(new);        
         Ok(())

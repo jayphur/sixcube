@@ -9,17 +9,17 @@ use crate::CHUNK_SIZE as SIZE;
 use crate::CHUNK_SIZE as SIZE_U;
 
 #[derive(Debug)]
-pub(crate) struct Chunk<T: Default + Debug + Clone, const S: usize> {
+pub(crate) struct Chunk<T: Default + Debug + Clone + Send, const S: usize> {
     voxels: [[[T; S]; S]; S],
 }
-impl<T: Default + Debug + Clone, const S: usize> Default for Chunk<T, S> {
+impl<T: Default + Debug + Clone + Send, const S: usize> Default for Chunk<T, S> {
     fn default() -> Self {
         let voxels = [[[(); S]; S]; S].map(|s| s.map(|s| s.map(|_| T::default()))); // god awful default initialization.
         Self { voxels }
     }
 }
 
-impl<T: Default + Debug + Clone> ChunkTrait<T> for Chunk<T, SIZE_U> {
+impl<T: Default + Debug + Clone + Send> ChunkTrait<T> for Chunk<T, SIZE_U> {
     fn new() -> Self {
         Self::default()
     }
