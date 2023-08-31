@@ -1,7 +1,7 @@
 use std::{collections::VecDeque, mem};
 use crate::{
     obj::{
-        dim::{self, MapError, DimTypePtr},
+        dim::{self, MapError, DimTypePtr, DimTypeInstancePtr},
         element::Element,
         voxel::Voxel,
     },
@@ -77,7 +77,7 @@ impl dim::MapTrait for Map<Voxel, Element> {
         }
     }
 
-    async fn load(&mut self, dim: &DimTypePtr) -> Result<()> {
+    async fn load(&mut self) -> Result<()> {
         for pos in self.to_load.drain(..){
             if let Some(chunk) = self.chunks.get_mut_weak(pos.chunk()){
                 chunk.try_load().await?
@@ -90,7 +90,7 @@ impl dim::MapTrait for Map<Voxel, Element> {
         Ok(())
     }
 
-    fn gen(&mut self, dim: &DimTypePtr) -> Result<()> {
+    fn gen(&mut self, dim: &DimTypeInstancePtr) -> Result<()> {
         for pos in mem::take(&mut self.to_generate){
             self.generate_chunk(dim, pos)?;
         }
@@ -115,7 +115,7 @@ where
     }
 }
 impl<E: Debug> Map<Voxel,E>{
-    fn generate_chunk(&mut self, dim: &DimTypePtr, pos: GlobalPos) -> Result<()>{
+    fn generate_chunk(&mut self, dim: &DimTypeInstancePtr, pos: GlobalPos) -> Result<()>{
         let global = pos;
         let mut new: Chunk<Option<Voxel>, CHUNK_SIZE> = Chunk::default();
         for relative in Chunk::<Option<Voxel>, CHUNK_SIZE>::all_pos(){

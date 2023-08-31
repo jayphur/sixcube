@@ -1,22 +1,26 @@
 use dyn_clone::DynClone;
 use rustc_hash::FxHashMap;
 use std::fmt::Debug;
-use crate::{data::Name, obj::{voxel::VoxelTypePtr, element::ElementTypePtr, dim::DimTypePtr}};
+use crate::{data::Name, obj::voxel::VoxelTypePtr};
 
 /// Type of something. a block / item / etc. Can be applied to "obj"s.
-/// A SINGLE static "master" variant of this trait (should) exist for all dyn Type<Obj>s of a specific variant.
-/// It can be accessed exclusively behind a 'static reference, or not...
-pub trait ObjType<Obj>: Debug + DynClone {
+/// This is the SINGLE static "master" variant of this trait.
+/// Most likely the `TypeInstance`s will have some kind of pointer back to this master 
+/// `Type`.
+pub trait Type<Obj, Instance>: Debug + DynClone {
     fn name(&self) -> &Name;
-    fn is_master(&self) -> bool;
-    fn new_obj(&self) -> Obj;
+    fn instance(&self) -> Instance;
+}
+
+/// Can be distributed 
+pub trait TypeInstance<Obj>: Debug + DynClone {
+    fn name(&self) -> &Name;
+    fn to_obj(self) -> Obj;
 }
 
 #[derive(Debug, Default)]
 pub struct TypeListPtr{
     voxel: FxHashMap<Name, VoxelTypePtr>,
-    element: FxHashMap<Name, ElementTypePtr>,
-    dim: FxHashMap<Name, DimTypePtr>
 }
 impl TypeListPtr{
     fn get_voxel(&self, name: &Name) -> Option<&VoxelTypePtr>{

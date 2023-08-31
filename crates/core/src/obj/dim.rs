@@ -1,23 +1,25 @@
 use super::{element::Element, voxel::Voxel};
-use crate::{data::pos::GlobalPos, map::Map, types::ObjType, Seed};
+use crate::{data::pos::GlobalPos, map::Map, types::{Type, TypeInstance}, Seed};
 use async_trait::async_trait;
 use sc_prelude::*;
 
 /// Dimension. Dimension wide that/Dimension specific data.
 #[derive(Debug)]
 pub struct Dim {
-    pub my_type: DimTypePtr,
+    pub my_type: DimTypeInstancePtr,
     pub map: Map<Voxel, Element>,
 }
 impl Dim {}
 
-///The requirements that a DimType (ptr) must be able to do
-pub trait DimType: ObjType<Dim>{
-    fn gen(&self, seed: Seed, pos: GlobalPos) -> Option<Voxel>;
-    fn new(&self) -> DimTypePtr;
-}
-trait_ptr_enum!(DimType);
+pub trait DimType: Type<Dim,DimTypeInstancePtr>{
 
+}
+static_trait_ptr!(DimType);
+///The requirements that a DimType (ptr) must be able to do
+pub trait DimTypeInstance: TypeInstance<Dim>{
+    fn gen(&self, seed: Seed, pos: GlobalPos) -> Option<Voxel>;
+}
+dynamic_static_trait_ptr!(DimTypeInstance);
 
 /// A map stores the voxels/chunks(?) in a dimension.
 /// This is the data structure that holds the voxels.
@@ -33,9 +35,9 @@ pub trait MapTrait: Debug {
     /// Get this voxel mutably, setting to load if not.
     fn get_mut_strong(&mut self, pos: GlobalPos) -> Result<&mut Option<Voxel>, MapError>;
     /// Load stuff thats gotta be loaded.
-    async fn load(&mut self, dim: &DimTypePtr) -> Result<()>;
+    async fn load(&mut self) -> Result<()>;
     /// Generate stuff stuff thats gotta be generated.
-    fn gen(&mut self, dim: &DimTypePtr) -> Result<()>;
+    fn gen(&mut self, dim: &DimTypeInstancePtr) -> Result<()>;
 }
 
 

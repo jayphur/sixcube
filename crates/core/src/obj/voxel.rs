@@ -1,11 +1,16 @@
-use crate::{types::ObjType, component::display::Displayable};
+use crate::types::{Type, TypeInstance};
 use sc_prelude::Debug;
 
 #[derive(Debug, Clone)]
 pub struct Voxel {
     pub my_type: VoxelTypePtr,
 }
-pub trait VoxelType: ObjType<Voxel> + Displayable {
-    fn new(&self) -> VoxelTypePtr;
+pub trait VoxelType: Type<Voxel, VoxelTypeInstancePtr>  {
+
 }
-trait_ptr_enum!(VoxelType);
+static_trait_ptr!(VoxelType);
+
+pub trait VoxelTypeInstance: TypeInstance<Voxel>{
+
+}
+dynamic_static_trait_ptr!(VoxelTypeInstance);
