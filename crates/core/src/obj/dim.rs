@@ -1,5 +1,5 @@
 use super::{element::Element, voxel::Voxel};
-use crate::{data::pos::GlobalPos, map::Map, types::{Type, TypeInstance}, Seed};
+use crate::{data::pos::GlobalPos, map::Map, types::{Type, TypeInstance}, Seed, display::{dim::DimDisplay, map::{ListenableMap}}};
 use async_trait::async_trait;
 use sc_prelude::*;
 
@@ -9,7 +9,6 @@ pub struct Dim {
     pub my_type: DimTypeInstancePtr,
     pub map: Map<Voxel, Element>,
 }
-impl Dim {}
 
 pub trait DimType: Type<Dim,DimTypeInstancePtr>{
 

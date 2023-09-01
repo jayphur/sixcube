@@ -8,5 +8,6 @@ pub mod types;
 pub mod display {
     pub mod dim;
     pub mod map;
+    pub mod world;
 }
 pub mod demo;

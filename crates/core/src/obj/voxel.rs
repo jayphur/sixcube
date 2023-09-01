@@ -1,4 +1,4 @@
-use crate::{types::{Type, TypeInstance}, display::dim::VoxelDisplayInfo};
+use crate::{types::{Type, TypeInstance}, display::map::VoxelDisplayInfo};
 use sc_prelude::Debug;
 
 #[derive(Debug, Clone)]

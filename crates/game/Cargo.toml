@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 sc-prelude = {path = "../prelude"}
 sc-core ={ path = "../core" }
+kiss3d = "0.35.0"

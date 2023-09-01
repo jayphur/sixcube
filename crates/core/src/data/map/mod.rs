@@ -97,7 +97,6 @@ impl dim::MapTrait for Map<Voxel, Element> {
         }
         Ok(())
     }
-
 }
 impl<V, E> Map<V, E>
 where
@@ -139,7 +138,7 @@ where
     V: Debug + Clone + Send,
     E: Debug,
 {
-    fn new_rx(&mut self) -> Self::Listener {
+    fn new_listener(&mut self) -> Self::Listener {
         let (tx, rx) = flume::unbounded();
         self.update_tx = Some(tx);
         Listener(rx)
