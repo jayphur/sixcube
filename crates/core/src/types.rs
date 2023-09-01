@@ -12,7 +12,12 @@ pub trait Type<Obj, Instance>: Debug + DynClone {
     fn instance(&self) -> Instance;
 }
 
-/// Can be distributed 
+/// Derived from a type. 
+/// 
+/// Some type instances are simple and thus are just static-- aka they can immutable.
+/// Other type instances will be more complex, having its own data and some parts that are static, a nested trait.
+/// 
+/// Nonetheless, they both are behind the same `TypeInstance<Obj>` trait
 pub trait TypeInstance<Obj>: Debug + DynClone {
     fn name(&self) -> &Name;
     fn to_obj(self) -> Obj;

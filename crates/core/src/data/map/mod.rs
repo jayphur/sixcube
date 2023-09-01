@@ -1,12 +1,12 @@
 use std::{collections::VecDeque, mem};
 use crate::{
     obj::{
-        dim::{self, MapError, DimTypePtr, DimTypeInstancePtr},
+        dim::{self, MapError, DimTypeInstancePtr},
         element::Element,
-        voxel::Voxel,
+        voxel::{Voxel, VoxelTypePtr},
     },
     pos::{GlobalPos, RelativePos, Pos},
-    Seed,
+    Seed, display::dim::VoxelDisplayInfo,
 };
 use async_trait::async_trait;
 use sc_prelude::*;
@@ -127,6 +127,7 @@ impl<E: Debug> Map<Voxel,E>{
     }
 }
 
+//TRAITS of dependency inversion...
 trait OctreeTrait<T: Default + Debug>: Debug + Default {
     fn new(size: u16) -> Self;
     fn get_weak(&self, pos: (i16, i16, i16)) -> Option<&T>;
