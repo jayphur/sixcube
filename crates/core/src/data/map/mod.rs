@@ -3,10 +3,10 @@ use crate::{
     obj::{
         dim::{self, MapError, DimTypeInstancePtr},
         element::Element,
-        voxel::{Voxel, VoxelTypePtr},
+        voxel::Voxel,
     },
     pos::{GlobalPos, RelativePos, Pos},
-    Seed, display::dim::VoxelDisplayInfo,
+    Seed, display::dim::{ListenableMap, MapListener, MapUpdate},
 };
 use async_trait::async_trait;
 use sc_prelude::*;
@@ -28,6 +28,7 @@ where
     seed: Seed,
     to_generate: VecDeque<GlobalPos>,
     to_load: VecDeque<GlobalPos>,
+    update_tx: Option<flume::Sender<MapUpdate>>,
     _e: PhantomData<E>,
 }
 #[async_trait]
@@ -111,7 +112,14 @@ where
     E: Debug,
 {
     fn default() -> Self {
-        Self { chunks: Default::default(), seed: Default::default(), to_generate: Default::default(), to_load: Default::default(), _e: Default::default() }
+        Self { 
+            chunks: Default::default(), 
+            seed: Default::default(), 
+            to_generate: Default::default(), 
+            to_load: Default::default(), 
+            update_tx: None,
+            _e: Default::default(), 
+        }
     }
 }
 impl<E: Debug> Map<Voxel,E>{
@@ -126,7 +134,31 @@ impl<E: Debug> Map<Voxel,E>{
         Ok(())
     }
 }
+impl<V, E> ListenableMap for Map<V, E>
+where
+    V: Debug + Clone + Send,
+    E: Debug,
+{
+    fn new_rx(&mut self) -> Self::Listener {
+        let (tx, rx) = flume::unbounded();
+        self.update_tx = Some(tx);
+        Listener(rx)
+    }
 
+    type Listener = Listener;
+}
+
+pub struct Listener(flume::Receiver<MapUpdate>);
+impl MapListener for Listener{
+    fn block_rx(&self) -> MapUpdate {
+        todo!()
+    }
+
+    fn try_rx(&self) -> Option<MapUpdate> {
+        todo!()
+    }
+}
+ 
 //TRAITS of dependency inversion...
 trait OctreeTrait<T: Default + Debug>: Debug + Default {
     fn new(size: u16) -> Self;
