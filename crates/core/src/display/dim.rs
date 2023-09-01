@@ -1,4 +1,5 @@
-use crate::{pos::GlobalPos, obj::{voxel::VoxelTypePtr, dim::{Dim, MapTrait}}};
+use crate::obj::dim::Dim;
+use super::map::MapListener;
 
 pub trait VoxelDisplayInfo{
     fn translucent(&self) -> bool;
@@ -15,28 +16,10 @@ pub struct Sides<T>{
 
 /// A representation of a dimension.
 pub struct DimDisplay<L: MapListener>{
-    map_updates: L,
+    map_update_rx: L,
 }
 impl<L: MapListener> DimDisplay<L>{
-    fn big_load_map<M: MapTrait>(&mut self, map: &M){
+    fn full_load_dim(&mut self, dim: &Dim){
         todo!()
     }
-    fn big_load_dim(&mut self, dim: &Dim){
-        self.big_load_map(&dim.map);
-        todo!()
-    }
-}
-
-
-pub trait ListenableMap{
-    type Listener: MapListener;
-    fn new_rx(&mut self) -> Self::Listener;
-}
-pub trait MapListener {
-    fn block_rx(&self) -> MapUpdate;
-    fn try_rx(&self) -> Option<MapUpdate>;
-}
-pub enum MapUpdate{
-    Removed(GlobalPos),
-    Added(GlobalPos, VoxelTypePtr)
 }

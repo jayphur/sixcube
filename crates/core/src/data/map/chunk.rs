@@ -1,4 +1,5 @@
 use lazy_static::lazy_static;
+use ndarray::Array3;
 use sc_prelude::*;
 
 use crate::pos::Pos;
@@ -10,12 +11,11 @@ use crate::CHUNK_SIZE as SIZE_U;
 
 #[derive(Debug)]
 pub(crate) struct Chunk<T: Default + Debug + Clone + Send, const S: usize> {
-    voxels: [[[T; S]; S]; S],
+    voxels: Array3<T>,
 }
 impl<T: Default + Debug + Clone + Send, const S: usize> Default for Chunk<T, S> {
     fn default() -> Self {
-        let voxels = [[[(); S]; S]; S].map(|s| s.map(|s| s.map(|_| T::default()))); // god awful default initialization.
-        Self { voxels }
+        Self { voxels: Array3::<T>::default((S,S,S)) }
     }
 }
 
@@ -25,13 +25,11 @@ impl<T: Default + Debug + Clone + Send> ChunkTrait<T> for Chunk<T, SIZE_U> {
     }
 
     fn get(&self, pos: RelativePos) -> &T {
-        let pos: (usize, usize, usize) = pos.try_tuple().unwrap();
-        &self.voxels[pos.2][pos.1][pos.0]
+        &self.voxels.get(pos.try_tuple().unwrap()).unwrap()
     }
 
     fn get_mut(&mut self, pos: RelativePos) -> &mut T {
-        let pos: (usize, usize, usize) = pos.try_tuple().unwrap();
-        &mut self.voxels[pos.2][pos.1][pos.0]
+        self.voxels.get_mut(pos.try_tuple().unwrap()).unwrap()
     }
 
     fn all_pos() -> &'static Vec<RelativePos> {

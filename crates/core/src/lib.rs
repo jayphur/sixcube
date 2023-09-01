@@ -7,5 +7,6 @@ pub use data::*;
 pub mod types;
 pub mod display {
     pub mod dim;
+    pub mod map;
 }
 pub mod demo;

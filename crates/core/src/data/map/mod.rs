@@ -6,7 +6,7 @@ use crate::{
         voxel::Voxel,
     },
     pos::{GlobalPos, RelativePos, Pos},
-    Seed, display::dim::{ListenableMap, MapListener, MapUpdate},
+    Seed, display::map::{ListenableMap, MapListener, MapUpdate},
 };
 use async_trait::async_trait;
 use sc_prelude::*;
