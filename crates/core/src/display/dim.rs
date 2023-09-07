@@ -1,7 +1,7 @@
 use std::ops::DerefMut;
 
-use crate::{obj::dim::Dim, map::Listener};
-use super::map::{MapListener, MapDisplay};
+use crate::obj::dim::Dim;
+use super::map::MapDisplay;
 
 /// A representation of a dimension.
 pub struct DimDisplay{

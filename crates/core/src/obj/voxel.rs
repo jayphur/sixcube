@@ -1,16 +1,16 @@
-use crate::{types::{Type, TypeInstance}, display::map::VoxelDisplayInfo};
+use crate::{types::{Type, Instance}, display::map::VoxelDisplayInfo};
 use sc_prelude::Debug;
 
 #[derive(Debug, Clone)]
 pub struct Voxel {
-    pub my_type: VoxelTypePtr,
+    pub my_type: VoxelInstancePtr,
 }
-pub trait VoxelType: Type<Voxel, VoxelTypeInstancePtr>  {
+pub trait VoxelType: Type<Voxel, VoxelInstancePtr>  {
 
 }
 static_trait_ptr!(VoxelType);
 
-pub trait VoxelTypeInstance: TypeInstance<Voxel> + VoxelDisplayInfo{
+pub trait VoxelInstance: Instance<Voxel> + VoxelDisplayInfo{
 
 }
-dynamic_static_trait_ptr!(VoxelTypeInstance);
+dynamic_static_trait_ptr!(VoxelInstance);

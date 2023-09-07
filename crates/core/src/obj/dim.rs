@@ -1,5 +1,5 @@
-use super::{element::Element, voxel::Voxel};
-use crate::{data::pos::GlobalPos, map::Map, types::{Type, TypeInstance}, Seed, display::{dim::DimDisplay, map::{ListenableMap}}};
+use super::{element::Element, voxel::Voxel};    
+use crate::{data::pos::GlobalPos, map::Map, types::{Type, Instance}, Seed};
 use async_trait::async_trait;
 use sc_prelude::*;
 
@@ -11,12 +11,12 @@ pub struct Dim {
 }
 
 pub trait DimType: Type<Dim,DimTypeInstancePtr>{
-
+    fn gen(&self, seed: Seed, pos: GlobalPos) -> Option<Voxel>;
 }
 static_trait_ptr!(DimType);
 ///The requirements that a DimType (ptr) must be able to do
-pub trait DimTypeInstance: TypeInstance<Dim>{
-    fn gen(&self, seed: Seed, pos: GlobalPos) -> Option<Voxel>;
+pub trait DimTypeInstance: Instance<Dim> + DimType{
+
 }
 dynamic_static_trait_ptr!(DimTypeInstance);
 

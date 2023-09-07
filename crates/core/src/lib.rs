@@ -10,4 +10,4 @@ pub mod display {
     pub mod map;
     pub mod world;
 }
-pub mod demo;
+pub mod storage;

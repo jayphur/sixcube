@@ -1,5 +1,3 @@
-use crate::display::world::WorldDisplay;
-
 use super::dim::Dim;
 
 #[derive(Debug)]

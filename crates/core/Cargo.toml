@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 sc-prelude = { path = "../prelude" }
+
 dyn-clone = "1.0.13"
 lazy_static = "1.4.0"
 thiserror = "1.0.47"
@@ -16,7 +17,11 @@ rustc-hash = "1.1.0"
 crossbeam-channel = "0.5.8"
 flume = "0.11.0"
 ndarray = "0.15.6"
+serde = { version = "1.0.188", features = ["derive"]}
 
 
 [dev-dependencies]
 rstest = "0.18.1"
+
+[features]
+demo = []
