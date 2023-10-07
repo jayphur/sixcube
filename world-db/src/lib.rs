@@ -1,8 +1,4 @@
 #![feature(return_position_impl_trait_in_trait)]
-
-use std::{marker::PhantomData, iter};
-
-use chunk::Chunk;
 use octree::Octree;
 use prelude::*;
 use core_obj::*;
@@ -69,6 +65,9 @@ impl<'a, T: TypeId + 'a,D: Data + 'a> db_protocol::Map<'a, T,D> for Map<T,D>{
         }
     }
 
+    /// Run a closure on each voxel of `&mut Voxel<...>` and `Pos`
+    /// 
+    /// ...where `Pos` is that voxel's position.
     fn for_each_voxel<F>(&mut self, f: F)
     where F: Fn(&mut Voxel<T,D>, Pos) -> () + Sync + Send {
         self.loaded_chunks.iter().for_each(|cw_pos| {
