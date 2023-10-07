@@ -1,18 +1,13 @@
-[package]
-name = "cube_thing"
-version = "0.0.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [workspace]
-members=[
-    "crates/*",
+members = [
+    "plugin/*",
+    "prelude",
+    "core-obj",
+    "db-protocol",
+    "world-db",
+    "runtime",
 ]
-
-[dependencies]
-sc-core = {path = "crates/core"}
-sc-game = {path = "crates/game"}
-sc-prelude = {path = "crates/prelude"}
-sc-app = {path = "crates/app"}
-sc-render = {path = "crates/render"}
+edition = "2021"
+workspace.resolver = "2"
+balls = "23" #huh
 

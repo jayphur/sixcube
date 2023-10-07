@@ -1,0 +1,15 @@
+[package]
+name = "world-db"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+prelude = {path = "../prelude"}
+rstest = "0.18.2"
+db-protocol = {path = "../db-protocol"}
+core-obj = { path = "../core-obj"}
+streaming-iterator = "0.1.9"
+rayon = "1.8.0"
+owning_ref = "0.4.1"

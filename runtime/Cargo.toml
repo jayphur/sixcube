@@ -1,0 +1,12 @@
+[package]
+name = "sc-runtime"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+world-db = { path = "../world-db" }
+db-protocol = { path = "../db-protocol" } #weak dependency
+prelude = {path = "../prelude"}
+core-obj = {path = "../core-obj"}

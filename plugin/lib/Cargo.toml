@@ -1,0 +1,10 @@
+[package]
+name = "sc-plugin-lib"
+version = "0.1.0"
+edition = "2021"
+description = "The plugin library to be used by plugins that compile to wasm"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+fp-bindgen = "3.0.0"
+sc-plugin-bindings = { path = "../../plugin-bindings/rust-plugin" }

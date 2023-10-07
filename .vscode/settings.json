@@ -1,11 +1,8 @@
 {
     "cSpell.words": [
-        "Display",
-        "ndarray",
-        "neccecray",
         "Octree",
-        "renderable",
-        "rstest"
-    ],
-    "rust-analyzer.showUnlinkedFileNotification": false
+        "recarr",
+        "rstest",
+        "Unindexed"
+    ]
 }
