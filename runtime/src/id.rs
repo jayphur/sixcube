@@ -3,12 +3,11 @@ use core_obj::ObjStruct;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct TypeId<'i>(&'i TypeIdInner);
-impl core_obj::TypeId for TypeId<'_>{
+impl<'i> core_obj::TypeId for TypeId<'i>{
+    type AttrId = AttrId<'i>;
     fn my_obj(&self) -> &ObjStruct {
         &self.0.object
     }
-
-    type AttrId = AttrId;
 }
 impl PartialEq for TypeId<'_>{
     fn eq(&self, other: &Self) -> bool {
@@ -24,11 +23,14 @@ pub(crate) struct TypeIdInner{
 }
 
 #[derive(Debug,Clone, Copy, PartialEq)]
-pub struct AttrId{
-    
-}
-impl core_obj::AttrId for AttrId{
+pub struct AttrId<'i>(&'i AttrIdInner);
+impl<'i> core_obj::AttrId for AttrId<'i>{
     fn default_inner(&self) -> core_obj::Attr<Self> {
         todo!()
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct AttrIdInner{
+
 }
