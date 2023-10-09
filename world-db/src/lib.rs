@@ -7,7 +7,9 @@ use rayon::prelude::{ParallelIterator, IntoParallelRefIterator, IndexedParallelI
 mod octree;
 mod chunk;
 
-const CHUNK_SIZE: usize = 32;
+const CHUNK_SIZE: usize = 4;
+const CHUNK_SIZE_I32: i32 = 4;
+
 
 // Chunk-Wise pos
 type CwPos = Pos;
@@ -37,11 +39,13 @@ trait OctreeTrait<T: Default + Debug>: Debug + Default + Send{
 }
 trait ChunkTrait<T: TypeId,D: Data>: Debug + Default + Send{
     fn contains_attr(&self, attr: T::AttrId) -> bool;
+    /// Not Cw, relative.
     fn tell<M: Send>(&self, pos: Pos, msg: M);
+    /// Not Cw, relative.
     fn get(&self, pos: Pos) -> &Option<Voxel<T,D>>;
-    fn iter_voxel<'a>(&'a self, cw_pos: CwPos) -> impl Iterator<Item=(&Voxel<T,D>, Pos)>
+    fn iter_voxel<'a>(&'a self, cw_pos: CwPos) -> impl Iterator<Item=(&Option<Voxel<T,D>>, Pos)>
     where D: 'a, T: 'a;
-    fn iter_voxel_mut<'a>(&'a mut self, cw_pos: CwPos) -> impl Iterator<Item=(&mut Voxel<T,D>, Pos)>
+    fn iter_voxel_mut<'a>(&'a mut self, cw_pos: CwPos) -> impl Iterator<Item=(&mut Option<Voxel<T,D>>, Pos)>
     where D: 'a, T: 'a;
 }
 
@@ -61,7 +65,6 @@ impl<'a, T: TypeId + 'a,D: Data + 'a> db_protocol::Map<'a, T,D> for Map<T,D>{
     fn iter_voxels(&'a self) -> Self::VoxelIter {
         VoxelIter{
             map: self,
-            index: 0,
         }
     }
 
@@ -69,7 +72,7 @@ impl<'a, T: TypeId + 'a,D: Data + 'a> db_protocol::Map<'a, T,D> for Map<T,D>{
     /// 
     /// ...where `Pos` is that voxel's position.
     fn for_each_voxel<F>(&mut self, f: F)
-    where F: Fn(&mut Voxel<T,D>, Pos) -> () + Sync + Send {
+    where F: Fn(&mut Option<Voxel<T,D>>, Pos) -> () + Sync + Send {
         self.loaded_chunks.iter().for_each(|cw_pos| {
             if let Some(index) = self.tree.find_index(cw_pos){
                 self.to_update_cw_pos.push(*cw_pos);
@@ -94,11 +97,10 @@ impl<'a, T: TypeId + 'a,D: Data + 'a> db_protocol::Map<'a, T,D> for Map<T,D>{
 pub struct VoxelIter<'a, T,D>
 where T: TypeId + 'a + Send + Sync, D: Data + 'a + Send + Sync{
     map: &'a Map<T,D>,
-    index: usize,
 }
 impl<T: TypeId,D: Data> db_protocol::VoxelIter<'_, T,D> for VoxelIter<'_, T,D>{
     fn for_each<F>(&mut self, f: F)
-    where F: Fn(&Voxel<T,D>, &Pos) -> () + Sync + Send
+    where F: Fn(&Option<Voxel<T,D>>, &Pos) -> () + Sync + Send
     {
         self.map.loaded_chunks.par_iter().for_each(|cw_pos|{
             if let Some(chunk) = self.map.tree.get_weak(cw_pos){

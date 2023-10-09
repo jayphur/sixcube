@@ -14,12 +14,12 @@ where T: TypeId, D: Data, Self: Sized {
     fn iter_voxels(&'a self) -> Self::VoxelIter;
     /// Iter LOADED voxels
     fn for_each_voxel<F>(&mut self, f: F)
-    where F: Fn(&mut Voxel<T,D>, Pos) -> () + Sync + Send;
+    where F: Fn(&mut Option<Voxel<T,D>>, Pos) -> () + Sync + Send;
 }
 
 pub trait VoxelIter<'a, T: TypeId, D: Data>{
     fn for_each<F>(&mut self, f: F)
-    where F: Fn(&Voxel<T,D>, &Pos) -> () + Sync + Send;
+    where F: Fn(&Option<Voxel<T,D>>, &Pos) -> () + Sync + Send;
 }
 #[derive(Debug, Clone, Copy, Default)]
 pub enum IsLoaded{

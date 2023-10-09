@@ -84,3 +84,33 @@ pub trait AttrDefiner<A: AttrId>{
     /// The voxels this struct defined.
     fn attr_def(&self) -> &[A];
 }
+
+pub mod fake_types{
+    use crate::{TypeId, AttrId, Data};
+
+    #[derive(Default,Debug,PartialEq, Eq, Clone, Copy)]
+    pub struct FakeAttr(u8);
+    impl AttrId for FakeAttr{
+        fn default_inner(&self) -> crate::Attr<Self> {
+            todo!()
+        }
+    }
+
+    #[derive(Default,Debug,PartialEq, Eq, Clone, Copy)]
+    pub struct FakeTypeId(u8);
+    impl TypeId for FakeTypeId{
+        type AttrId = FakeAttr;
+
+        fn my_obj(&self) -> &crate::ObjStruct {
+            todo!()
+        }
+    }
+
+    #[derive(Default,Debug,PartialEq, Eq, Clone, Copy)]
+    pub struct FakeData(u8);
+    impl Data for FakeData{
+        
+    }
+    
+
+}
