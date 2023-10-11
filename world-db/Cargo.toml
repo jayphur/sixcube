@@ -13,3 +13,4 @@ core-obj = { path = "../core-obj"}
 streaming-iterator = "0.1.9"
 rayon = "1.8.0"
 owning_ref = "0.4.1"
+flume = "0.11.0"

@@ -1,4 +1,5 @@
 #![feature(return_position_impl_trait_in_trait)]
+use db_protocol::message::Message;
 use octree::Octree;
 use prelude::*;
 use core_obj::*;
@@ -57,7 +58,7 @@ impl<'a, T: TypeId + 'a,D: Data + 'a> db_protocol::Map<'a, T,D> for Map<T,D>{
         Some(self.tree.get_weak(&(pos / CHUNK_SIZE as i32))?.get(pos).as_ref()?.type_id)
     }
 
-    fn tell<M: Send>(&self, pos: Pos, msg: M) {
+    fn tell(&self, pos: Pos, msg: Message<T,D>){
         let Some(chunk) = self.tree.get_weak(&(pos / CHUNK_SIZE as i32)) else {return ();};
         chunk.tell(pos, msg);
     }

@@ -35,7 +35,8 @@ pub struct World<Dim>{
 
 /// Assuming there is no mixing type id of different objects by faith (and checking)
 pub trait TypeId: PartialEq + Copy + Clone + Debug + Send + Sync{
-    type AttrId: AttrId;
+    type AttrId: AttrId + Send;
+    type ActionId: ActionId + Send;
     fn my_obj(&self) -> &ObjStruct;
 }
 #[derive(Copy,Clone,Debug,PartialEq,Eq)]
@@ -44,11 +45,27 @@ pub enum ObjStruct{
     Dim,
 }
 
+pub trait ActionId: PartialEq + Copy + Clone + Send + Sync{
+
+}
 
 pub trait AttrId: PartialEq + Copy + Clone{
     fn default_inner(&self) -> Attr<Self>;
 }
 
+pub struct Action<Id: TypeId>{
+    id: Id::ActionId,
+    args: ActionArgs,
+}
+
+#[derive(Debug, Default, Clone, PartialEq)]
+pub enum ActionArgs{
+    #[default]
+    Unset,
+    Boolean(bool),
+    U8(u8),
+    String(String),
+}
 
 #[derive(Debug, Default, Clone)]
 pub struct Attr<Id: AttrId>{
@@ -86,7 +103,7 @@ pub trait AttrDefiner<A: AttrId>{
 }
 
 pub mod fake_types{
-    use crate::{TypeId, AttrId, Data};
+    use crate::{TypeId, AttrId, Data, ActionId};
 
     #[derive(Default,Debug,PartialEq, Eq, Clone, Copy)]
     pub struct FakeAttr(u8);
@@ -100,10 +117,12 @@ pub mod fake_types{
     pub struct FakeTypeId(u8);
     impl TypeId for FakeTypeId{
         type AttrId = FakeAttr;
+        type ActionId = FakeAction;
 
         fn my_obj(&self) -> &crate::ObjStruct {
             todo!()
         }
+
     }
 
     #[derive(Default,Debug,PartialEq, Eq, Clone, Copy)]
@@ -111,6 +130,10 @@ pub mod fake_types{
     impl Data for FakeData{
         
     }
-    
 
+    #[derive(Default,Debug,PartialEq, Eq, Clone, Copy)]
+    pub struct FakeAction(u8);
+    impl ActionId for FakeAction{
+
+    }
 }
