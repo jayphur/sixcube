@@ -1,6 +1,6 @@
 use core::panic;
-use prelude::*;
 use core_obj::Pos;
+use prelude::*;
 
 use super::OctreeTrait;
 
@@ -33,17 +33,20 @@ impl<T: Default + Debug + Send> Default for Octree<T> {
 }
 
 impl<T: Default + Debug + Send> OctreeTrait<T> for Octree<T> {
-    fn get_weak(&self, pos: &Pos ) -> Option<&T> {
-        self.get_raw(*self.root.get_weak((pos.x,pos.y,pos.z))?)
+    fn get_weak(&self, pos: &Pos) -> Option<&T> {
+        self.get_raw(*self.root.get_weak((pos.x, pos.y, pos.z))?)
     }
 
     fn get_mut_weak(&mut self, pos: &Pos) -> Option<&mut T> {
-        self.memory.get_mut(*self.root.get_mut_weak((pos.x,pos.y,pos.z))?)
+        self.memory
+            .get_mut(*self.root.get_mut_weak((pos.x, pos.y, pos.z))?)
     }
 
-    fn get_mut_strong(&mut self, pos: &Pos ) -> &mut T {
-        let index = *self.root.get_mut_strong((pos.x,pos.y,pos.z), self.memory.len());
-        if index == self.memory.len(){
+    fn get_mut_strong(&mut self, pos: &Pos) -> &mut T {
+        let index = *self
+            .root
+            .get_mut_strong((pos.x, pos.y, pos.z), self.memory.len());
+        if index == self.memory.len() {
             self.memory.push(T::default());
         }
         self.get_raw_mut(index).unwrap()
@@ -55,7 +58,7 @@ impl<T: Default + Debug + Send> OctreeTrait<T> for Octree<T> {
     }
 
     fn find_index(&self, pos: &Pos) -> Option<usize> {
-        self.root.get_weak((pos.x,pos.y,pos.z)).copied()
+        self.root.get_weak((pos.x, pos.y, pos.z)).copied()
     }
 
     fn get_raw(&self, index: usize) -> Option<&T> {
@@ -78,13 +81,12 @@ impl<T: Default + Debug + Send> OctreeTrait<T> for Octree<T> {
         let mut current: usize = 0;
         let mut mut_ref = self.memory.iter_mut();
         let mut output = Vec::with_capacity(many.len());
-        for index in many{
+        for index in many {
             current = index - current;
             output.push(mut_ref.nth(current).unwrap())
         }
         output
     }
-
 }
 
 #[derive(Default, Debug)]
@@ -260,8 +262,11 @@ impl<T: Debug + Default> BranchNode<T> {
     }
     fn get_mut_strong(&mut self, pos: PosUnsigned, size: u16, new_t: T) -> &mut T {
         let (index, pos) = Self::pos_to_index_and_relative(pos, size);
-        self.children[index.2 as usize][index.1 as usize][index.0 as usize]
-            .get_mut_strong(pos, size / 2, new_t)
+        self.children[index.2 as usize][index.1 as usize][index.0 as usize].get_mut_strong(
+            pos,
+            size / 2,
+            new_t,
+        )
     }
     fn pos_to_index_and_relative(
         pos: PosUnsigned,
@@ -289,8 +294,8 @@ impl<T: Default + Debug> Default for BranchNode<T> {
 #[cfg(test)]
 mod tests {
     use super::OctreeTrait;
-    use rstest::*;
     use core_obj::Pos;
+    use rstest::*;
 
     type Inner = u128;
     type Octree = super::Octree<Inner>;
@@ -316,7 +321,7 @@ mod tests {
     #[case(0, (140,400,200))]
     fn set_get(#[case] size: u16, #[case] pos: (i32, i32, i32)) {
         let pos_shifted = Pos::new(pos.0, pos.1, pos.2 - 1);
-        let pos = Pos::new(pos.0,pos.1,pos.2);
+        let pos = Pos::new(pos.0, pos.1, pos.2);
         let mut new = Octree::new(size);
         *new.get_mut_strong(&pos) = 90;
         assert_eq!(new.get_weak(&pos), Some(&90));
@@ -333,9 +338,9 @@ mod tests {
     fn set_get_many(#[case] size: u16, #[case] pos: [(i32, i32, i32); 3]) {
         assert_ne!(pos[0], pos[1]);
         assert_ne!(pos[1], pos[2]); // overriding is a different test.
-        let pos0 = Pos::new(pos[0].0,pos[0].1,pos[0].2);
-        let pos1 = Pos::new(pos[1].0,pos[1].1,pos[1].2);
-        let pos2 = Pos::new(pos[2].0,pos[2].1,pos[2].2);
+        let pos0 = Pos::new(pos[0].0, pos[0].1, pos[0].2);
+        let pos1 = Pos::new(pos[1].0, pos[1].1, pos[1].2);
+        let pos2 = Pos::new(pos[2].0, pos[2].1, pos[2].2);
 
         let mut new = Octree::new(size);
         *new.get_mut_strong(&pos0) = 0;
@@ -351,7 +356,7 @@ mod tests {
     #[case(32, (0,-0,0))]
     fn overriding(#[case] size: u16, #[case] pos: (i32, i32, i32)) {
         let mut new = Octree::new(size);
-        let pos = Pos::new(pos.0,pos.1,pos.2);
+        let pos = Pos::new(pos.0, pos.1, pos.2);
         *new.get_mut_strong(&pos) = 12;
         assert_eq!(new.get_weak(&pos), Some(&12));
         *new.get_mut_strong(&Pos::new(100, 100, 100)) = 32; //random one.

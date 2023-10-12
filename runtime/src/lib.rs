@@ -10,10 +10,7 @@ mod message;
 type Dim<'i> = core_obj::Dim<TypeId<'i>, Data, Map<TypeId<'i>, Data, Message>>;
 type VisitorPtr<'i> = &'i dyn db_protocol::VoxelIter<'i, TypeId<'i>, Data, Message>;
 
-pub struct ScRuntime<'i>{
+pub struct ScRuntime<'i> {
     dims: Vec<Dim<'i>>,
-
 }
-impl ScRuntime<'_>{
-
-}
+impl ScRuntime<'_> {}
