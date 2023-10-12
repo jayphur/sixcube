@@ -5,7 +5,6 @@ use core_obj::ObjStruct;
 pub(crate) struct TypeId<'i>(&'i TypeIdInner);
 impl<'i> core_obj::TypeId for TypeId<'i>{
     type AttrId = AttrId<'i>;
-    type ActionId = ActionId<'i>;
     
     fn my_obj(&self) -> &ObjStruct {
         &self.0.object

@@ -1,17 +1,21 @@
 #![feature(return_position_impl_trait_in_trait)]
 
 use core_obj::*;
-use message::Message;
 use prelude::*;
+use update::Message;
 
-mod update;
-pub mod message;
+pub mod update;
 
-pub trait Map<'a, T, D>: Debug 
-where T: TypeId, D: Data, Self: Sized {
-    type VoxelIter : VoxelIter<'a, T,D> + Send ;
+pub trait Map<'a, T, D, M>: Debug 
+where 
+T: TypeId, 
+D: Data, 
+M: Message,
+Self: Sized 
+{
+    type VoxelIter : VoxelIter<'a, T,D,M> + Send ;
     fn get_type(&self, pos: Pos) -> Option<T>;
-    fn tell(&self, pos: Pos, msg: Message<T,D>);
+    fn tell(&self, pos: Pos, msg: M);
     /// Iter LOADED voxels
     fn iter_voxels(&'a self) -> Self::VoxelIter;
     /// Iter LOADED voxels
@@ -19,7 +23,7 @@ where T: TypeId, D: Data, Self: Sized {
     where F: Fn(&mut Option<Voxel<T,D>>, Pos) -> () + Sync + Send;
 }
 
-pub trait VoxelIter<'a, T: TypeId, D: Data>{
+pub trait VoxelIter<'a, T: TypeId, D: Data, M: Message>{
     fn for_each<F>(&mut self, f: F)
     where F: Fn(&Option<Voxel<T,D>>, &Pos) -> () + Sync + Send;
 }

@@ -1,19 +1,21 @@
+use db_protocol::update::Message;
 use prelude::*;
-use core_obj::{TypeId, Data, Voxel, Pos};
+use core_obj::{TypeId, Data, Voxel, Pos, AttrId};
 
 use crate::{ChunkTrait, CwPos, CHUNK_SIZE_I32};
 use super::CHUNK_SIZE;
 
 #[derive(Debug)]
-pub(crate) struct Chunk<T: TypeId,D: Data>{
+pub(crate) struct Chunk<T: TypeId,D: Data,M: Message>{
     voxels: [[[Option<Voxel<T,D>>; CHUNK_SIZE]; CHUNK_SIZE]; CHUNK_SIZE],
+    messages: Vec<M>, //TODO: actual message system
 }
-impl<T: TypeId,D: Data> ChunkTrait<T,D> for Chunk<T,D>{
-    fn contains_attr(&self, attr: <T as TypeId>::AttrId) -> bool {
+impl<T: TypeId,D: Data,M: Message> ChunkTrait<T,D,M> for Chunk<T,D,M>{
+    fn contains_attr(&self, attr: T::AttrId) -> bool {
         todo!()
     }
 
-    fn tell<M: Send>(&self, pos: Pos, msg: M) {
+    fn tell(&self, pos: Pos, msg: M) {
         todo!()
     }
 
@@ -44,14 +46,15 @@ impl<T: TypeId,D: Data> ChunkTrait<T,D> for Chunk<T,D>{
     }
 
 }
-impl<T: TypeId,D: Data> Default for Chunk<T,D>{
+impl<T: TypeId,D: Data,M: Message> Default for Chunk<T,D,M>{
     fn default() -> Self {
         let arr_1d: [_; CHUNK_SIZE] = std::array::from_fn(|_| None);
         let arr_2d: [[_; CHUNK_SIZE]; CHUNK_SIZE] = std::array::from_fn(|_| arr_1d.clone());
         let arr_3d: [[[_; CHUNK_SIZE]; CHUNK_SIZE]; CHUNK_SIZE] = std::array::from_fn(|_| arr_2d.clone());
         
         Self { 
-            voxels: arr_3d 
+            voxels: arr_3d,
+            messages: Vec::new(), 
         }
     }
 }
@@ -87,9 +90,10 @@ mod test{
 
     use super::Chunk;
     use core_obj::{fake_types::*, Pos, Voxel};
+    use db_protocol::update::fake_types::FakeMessage;
     #[test]
     fn get_and_set(){
-        let mut chunk: Chunk<FakeTypeId, FakeData> = Chunk::default();
+        let mut chunk: Chunk<FakeTypeId, FakeData, FakeMessage> = Chunk::default();
         let the_pos = Pos::new(1, 2, 3);
         for (voxel, pos) 
             in chunk.iter_voxel_mut(Pos::new(0,0,0)){

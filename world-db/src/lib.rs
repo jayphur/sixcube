@@ -1,5 +1,5 @@
 #![feature(return_position_impl_trait_in_trait)]
-use db_protocol::message::Message;
+use db_protocol::update::Message;
 use octree::Octree;
 use prelude::*;
 use core_obj::*;
@@ -16,8 +16,8 @@ const CHUNK_SIZE_I32: i32 = 4;
 type CwPos = Pos;
 
 #[derive(Debug)]
-pub struct Map<T: TypeId,D: Data>{
-    tree: Octree<chunk::Chunk<T,D>>,
+pub struct Map<T: TypeId,D: Data,M: Message>{
+    tree: Octree<chunk::Chunk<T,D,M>>,
     loaded_chunks: Vec<CwPos>,
     to_update_memory_index: Vec<usize>,
     to_update_cw_pos: Vec<CwPos>,
@@ -38,10 +38,10 @@ trait OctreeTrait<T: Default + Debug>: Debug + Default + Send{
     fn slice_raw_mut(&mut self) -> &mut [T];
     fn get_raw_many_mut(&mut self,  many: &Vec<usize>) -> Vec<&mut T>;
 }
-trait ChunkTrait<T: TypeId,D: Data>: Debug + Default + Send{
+trait ChunkTrait<T: TypeId,D: Data, M: Message>: Debug + Default + Send{
     fn contains_attr(&self, attr: T::AttrId) -> bool;
     /// Not Cw, relative.
-    fn tell<M: Send>(&self, pos: Pos, msg: M);
+    fn tell(&self, pos: Pos, msg: M);
     /// Not Cw, relative.
     fn get(&self, pos: Pos) -> &Option<Voxel<T,D>>;
     fn iter_voxel<'a>(&'a self, cw_pos: CwPos) -> impl Iterator<Item=(&Option<Voxel<T,D>>, Pos)>
@@ -50,15 +50,15 @@ trait ChunkTrait<T: TypeId,D: Data>: Debug + Default + Send{
     where D: 'a, T: 'a;
 }
 
-impl<'a, T: TypeId + 'a,D: Data + 'a> db_protocol::Map<'a, T,D> for Map<T,D>{
-    type VoxelIter = VoxelIter<'a,T,D>;
+impl<'a, T: TypeId + 'a,D: Data + 'a, M: Message + 'a> db_protocol::Map<'a, T,D,M> for Map<T,D,M>{
+    type VoxelIter = VoxelIter<'a,T,D,M>;
 
 
     fn get_type(&self, pos: Pos) -> Option<T> {
         Some(self.tree.get_weak(&(pos / CHUNK_SIZE as i32))?.get(pos).as_ref()?.type_id)
     }
 
-    fn tell(&self, pos: Pos, msg: Message<T,D>){
+    fn tell(&self, pos: Pos, msg: M){
         let Some(chunk) = self.tree.get_weak(&(pos / CHUNK_SIZE as i32)) else {return ();};
         chunk.tell(pos, msg);
     }
@@ -95,11 +95,20 @@ impl<'a, T: TypeId + 'a,D: Data + 'a> db_protocol::Map<'a, T,D> for Map<T,D>{
 }    
 
 
-pub struct VoxelIter<'a, T,D>
-where T: TypeId + 'a + Send + Sync, D: Data + 'a + Send + Sync{
-    map: &'a Map<T,D>,
+pub struct VoxelIter<'a, T,D,M>
+where 
+T: TypeId + 'a + Send + Sync, 
+D: Data + 'a + Send + Sync,
+M: Message
+{
+    map: &'a Map<T,D,M>,
 }
-impl<T: TypeId,D: Data> db_protocol::VoxelIter<'_, T,D> for VoxelIter<'_, T,D>{
+impl<T,D,M> db_protocol::VoxelIter<'_, T,D,M> for VoxelIter<'_, T,D,M>
+where 
+T: TypeId + Send + Sync, 
+D: Data + Send + Sync,
+M: Message
+{
     fn for_each<F>(&mut self, f: F)
     where F: Fn(&Option<Voxel<T,D>>, &Pos) -> () + Sync + Send
     {

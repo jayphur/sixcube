@@ -35,8 +35,7 @@ pub struct World<Dim>{
 
 /// Assuming there is no mixing type id of different objects by faith (and checking)
 pub trait TypeId: PartialEq + Copy + Clone + Debug + Send + Sync{
-    type AttrId: AttrId + Send;
-    type ActionId: ActionId + Send;
+    type AttrId: AttrId;
     fn my_obj(&self) -> &ObjStruct;
 }
 #[derive(Copy,Clone,Debug,PartialEq,Eq)]
@@ -53,8 +52,8 @@ pub trait AttrId: PartialEq + Copy + Clone{
     fn default_inner(&self) -> Attr<Self>;
 }
 
-pub struct Action<Id: TypeId>{
-    id: Id::ActionId,
+pub struct Action<Id: ActionId>{
+    id: Id,
     args: ActionArgs,
 }
 
@@ -116,12 +115,12 @@ pub mod fake_types{
     #[derive(Default,Debug,PartialEq, Eq, Clone, Copy)]
     pub struct FakeTypeId(u8);
     impl TypeId for FakeTypeId{
-        type AttrId = FakeAttr;
-        type ActionId = FakeAction;
-
+        
         fn my_obj(&self) -> &crate::ObjStruct {
             todo!()
         }
+
+        type AttrId = FakeAttr;
 
     }
 

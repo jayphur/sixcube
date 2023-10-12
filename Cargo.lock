@@ -429,7 +429,6 @@ name = "db-protocol"
 version = "0.1.0"
 dependencies = [
  "core-obj",
- "oneshot",
  "prelude",
 ]
 
@@ -1582,6 +1581,7 @@ version = "0.1.0"
 dependencies = [
  "core-obj",
  "db-protocol",
+ "oneshot",
  "prelude",
  "world-db",
 ]

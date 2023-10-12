@@ -10,3 +10,4 @@ world-db = { path = "../world-db" }
 db-protocol = { path = "../db-protocol" } #weak dependency
 prelude = {path = "../prelude"}
 core-obj = {path = "../core-obj"}
+oneshot = "0.1.6"

@@ -1,4 +1,4 @@
-use core_obj::{TypeId, Data, Pos, Voxel};
+use core_obj::{TypeId, Data, Pos, Voxel, AttrId};
 use super::Map;
 use prelude::*;
 
@@ -25,16 +25,48 @@ use prelude::*;
 
 ///AKA the updater. 
 
-pub trait VoxelVisitor<T: TypeId, D: Data>{
-    fn predicate(&self) -> &VisitingPredicate<T>; 
-    fn run_msg<'a, M: Map<'a, T,D>>(&self, map: &M, voxel: &Voxel<T,D>, pos: Pos);
+pub trait VoxelVisitor<T: TypeId, A: AttrId, D: Data, Msg: Message>{
+    fn predicate(&self) -> &VisitingPredicate<T,A>; 
+    fn run_msg<'a, M: Map<'a, T, D, Msg>>(&self, map: &M, voxel: &Voxel<T,D>, pos: Pos);
     fn run_respond(&self, voxel: &mut Voxel<T,D>, pos: Pos);
     fn run_apply(&self, voxel: &mut Voxel<T,D>, pos: Pos);   
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
-pub struct VisitingPredicate<T: TypeId>{
+pub struct VisitingPredicate<T: TypeId, A: AttrId>{
     pub loaded: bool,
-    pub with_attributes: Vec<T::AttrId>, 
+    pub with_attributes: Vec<A>, 
     pub of_type: Vec<T>,
+}
+
+pub trait Message: Send + Debug + Sync{
+    type ResponseRx<T>: ResponseRx<T>;
+    type ResponseTx<T>: ResponseTx<T>;
+}
+pub trait ResponseRx<T>{
+
+}
+pub trait ResponseTx<T>{
+    
+}
+
+pub mod fake_types{
+    use super::{Message, ResponseRx, ResponseTx};
+
+    #[derive(Default, Debug, Clone, Copy)]
+    pub struct FakeMessage{}
+    impl Message for FakeMessage{
+        type ResponseRx<T> = FakeResponseRx;
+
+        type ResponseTx<T> = FakeResponseTx;
+    }
+    pub struct FakeResponseTx();
+    impl<T> ResponseTx<T> for FakeResponseTx{
+
+    }
+    pub struct FakeResponseRx();
+    impl<T> ResponseRx<T> for FakeResponseRx{
+
+    }
+
 }
