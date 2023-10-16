@@ -42,7 +42,7 @@ pub enum ObjStruct {
 
 pub trait ActionId: PartialEq + Copy + Clone + Send + Sync {}
 
-pub trait AttrId: PartialEq + Copy + Clone {
+pub trait AttrId: PartialEq + Copy + Clone + Debug + Send + Sync{
     fn default_inner(&self) -> Attr<Self>;
 }
 

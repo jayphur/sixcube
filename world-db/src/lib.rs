@@ -1,6 +1,6 @@
 #![feature(return_position_impl_trait_in_trait)]
 use core_obj::*;
-use db_protocol::update::Message;
+use db_protocol::visit::{Message, VoxelVisitor};
 use octree::Octree;
 use prelude::*;
 use rayon::prelude::{
@@ -45,24 +45,13 @@ trait ChunkTrait<T: TypeId, D: Data, M: Message>: Debug + Default + Send {
     fn tell(&self, pos: Pos, msg: M);
     /// Not Cw, relative.
     fn get(&self, pos: Pos) -> &Option<Voxel<T, D>>;
-    fn iter_voxel<'a>(&'a self, cw_pos: CwPos) -> impl Iterator<Item = (&Option<Voxel<T, D>>, Pos)>
-    where
-        D: 'a,
-        T: 'a;
-    fn iter_voxel_mut<'a>(
-        &'a mut self,
-        cw_pos: CwPos,
-    ) -> impl Iterator<Item = (&mut Option<Voxel<T, D>>, Pos)>
-    where
-        D: 'a,
-        T: 'a;
+    /// Not Cw, relative.
+    fn get_mut(&mut self, pos: Pos) -> &mut Option<Voxel<T, D>>;
 }
 
-impl<'a, T: TypeId + 'a, D: Data + 'a, M: Message + 'a> db_protocol::Map<'a, T, D, M>
+impl<'a, T: TypeId + 'a, A: AttrId + 'a, D: Data + 'a, M: Message + 'a> db_protocol::Map<'a, T, A, D, M>
     for Map<T, D, M>
 {
-    type VoxelIter = VoxelIter<'a, T, D, M>;
-
     fn get_type(&self, pos: Pos) -> Option<T> {
         Some(
             self.tree
@@ -78,61 +67,12 @@ impl<'a, T: TypeId + 'a, D: Data + 'a, M: Message + 'a> db_protocol::Map<'a, T, 
         chunk.tell(pos, msg);
     }
 
-    fn iter_voxels(&'a self) -> Self::VoxelIter {
-        VoxelIter { map: self }
+    fn do_each_visitor(&self, visitors: &[&dyn VoxelVisitor<T,A,D,M, Self>]) {
+        todo!()
     }
 
-    /// Run a closure on each voxel of `&mut Voxel<...>` and `Pos`
-    ///
-    /// ...where `Pos` is that voxel's position.
-    fn for_each_voxel<F>(&mut self, f: F)
-    where
-        F: Fn(&mut Option<Voxel<T, D>>, Pos) -> () + Sync + Send,
-    {
-        self.loaded_chunks.iter().for_each(|cw_pos| {
-            if let Some(index) = self.tree.find_index(cw_pos) {
-                self.to_update_cw_pos.push(*cw_pos);
-                self.to_update_memory_index.push(index);
-            }
-        });
-        self.tree
-            .get_raw_many_mut(&self.to_update_memory_index)
-            .into_par_iter()
-            .zip(self.to_update_cw_pos.par_iter())
-            .for_each(|(chunk, cw_pos)| {
-                chunk
-                    .iter_voxel_mut(*cw_pos)
-                    .for_each(|(vox, pos)| f(vox, pos))
-            });
-        self.to_update_cw_pos.clear();
-        self.to_update_memory_index.clear();
+    fn do_each_visitor_mut(&mut self, visitors: &[&dyn VoxelVisitor<T,A,D,M, Self>]) {
+        todo!()
     }
-}
 
-pub struct VoxelIter<'a, T, D, M>
-where
-    T: TypeId + 'a + Send + Sync,
-    D: Data + 'a + Send + Sync,
-    M: Message,
-{
-    map: &'a Map<T, D, M>,
-}
-impl<T, D, M> db_protocol::VoxelIter<'_, T, D, M> for VoxelIter<'_, T, D, M>
-where
-    T: TypeId + Send + Sync,
-    D: Data + Send + Sync,
-    M: Message,
-{
-    fn for_each<F>(&mut self, f: F)
-    where
-        F: Fn(&Option<Voxel<T, D>>, &Pos) -> () + Sync + Send,
-    {
-        self.map.loaded_chunks.par_iter().for_each(|cw_pos| {
-            if let Some(chunk) = self.map.tree.get_weak(cw_pos) {
-                chunk
-                    .iter_voxel(*cw_pos)
-                    .for_each(|(vox, pos)| f(vox, &pos))
-            }
-        });
-    }
 }
