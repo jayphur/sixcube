@@ -6,10 +6,9 @@ use visit::{Message, VoxelVisitor};
 
 pub mod visit;
 
-pub trait Map<'a, T, A, D, M>: Debug
+pub trait Map<'a, T, D, M>: Debug
 where
     T: TypeId,
-    A: AttrId,
     D: Data,
     M: Message,
     Self: Sized,
@@ -17,9 +16,9 @@ where
     fn get_type(&self, pos: Pos) -> Option<T>;
     fn tell(&self, pos: Pos, msg: M);
     /// Iter LOADED voxels
-    fn do_each_visitor(&self, visitors: &[&dyn VoxelVisitor<T,A,D,M, Self>]);
+    fn do_each_visitor(&self, visitors: &[&dyn VoxelVisitor<T,D,M, Self>]);
     /// Iter LOADED voxels
-    fn do_each_visitor_mut(&mut self, visitors: &[&dyn VoxelVisitor<T,A,D,M, Self>]);
+    fn do_each_visitor_mut(&mut self, visitors: &[&dyn VoxelVisitor<T,D,M, Self>]);
 }
 
 #[derive(Debug, Clone, Copy, Default)]

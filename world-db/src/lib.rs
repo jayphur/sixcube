@@ -49,7 +49,7 @@ trait ChunkTrait<T: TypeId, D: Data, M: Message>: Debug + Default + Send {
     fn get_mut(&mut self, pos: Pos) -> &mut Option<Voxel<T, D>>;
 }
 
-impl<'a, T: TypeId + 'a, A: AttrId + 'a, D: Data + 'a, M: Message + 'a> db_protocol::Map<'a, T, A, D, M>
+impl<'a, T: TypeId + 'a, D: Data + 'a, M: Message + 'a> db_protocol::Map<'a, T, D, M>
     for Map<T, D, M>
 {
     fn get_type(&self, pos: Pos) -> Option<T> {
@@ -67,11 +67,11 @@ impl<'a, T: TypeId + 'a, A: AttrId + 'a, D: Data + 'a, M: Message + 'a> db_proto
         chunk.tell(pos, msg);
     }
 
-    fn do_each_visitor(&self, visitors: &[&dyn VoxelVisitor<T,A,D,M, Self>]) {
+    fn do_each_visitor(&self, visitors: &[&dyn VoxelVisitor<T,D,M, Self>]) {
         todo!()
     }
 
-    fn do_each_visitor_mut(&mut self, visitors: &[&dyn VoxelVisitor<T,A,D,M, Self>]) {
+    fn do_each_visitor_mut(&mut self, visitors: &[&dyn VoxelVisitor<T,D,M, Self>]) {
         todo!()
     }
 
