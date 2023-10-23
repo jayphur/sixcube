@@ -1,8 +1,9 @@
 use std::collections::BinaryHeap;
 
 use core_obj::{Data, Pos, TypeId, Voxel};
-use db_protocol::visit::Message;
+use db_protocol::visit::{Message, self, VoxelVisit};
 use prelude::*;
+use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
 use super::CHUNK_SIZE;
 use crate::{ChunkTrait, CwPos, CHUNK_SIZE_I32};
@@ -12,6 +13,7 @@ pub(crate) struct Chunk<T: TypeId, D: Data, M: Message> {
     voxels: [[[Option<Voxel<T, D>>; CHUNK_SIZE]; CHUNK_SIZE]; CHUNK_SIZE],
     messages: (flume::Sender<(Pos,M)>, flume::Receiver<(Pos,M)>),
     __messages_heap: BinaryHeap<PosMsg<M>>,
+    __messages_locations: [[[(); CHUNK_SIZE]; CHUNK_SIZE]; CHUNK_SIZE],
     contained_attr: Vec<T::AttrId>, //TODO: does not actually update atm, just sits there
 }
 impl<T: TypeId, D: Data, M: Message> ChunkTrait<T, D, M> for Chunk<T, D, M> {
@@ -29,6 +31,21 @@ impl<T: TypeId, D: Data, M: Message> ChunkTrait<T, D, M> for Chunk<T, D, M> {
     fn get_mut(&mut self, pos: Pos) -> &mut Option<Voxel<T, D>> {
         &mut self.voxels[pos.x as usize][pos.y as usize][pos.z as usize]
     }
+
+    fn get_visited<V>(&self, map: &crate::Map<T,D,M>, cw_pos: CwPos, visitor: &V) 
+    where V: visit::VoxelVisitor<T,D, M, crate::Map<T,D,M>> + Send + Sync {
+        ALL_POS.par_iter()
+        .filter_map(|pos|{
+            match self.get(*pos){
+                Some(vox) => Some((pos,vox)),
+                _ => None,
+            }
+        }).for_each(|(pos,voxel)|{
+            
+            todo!()
+        });
+    }
+
 }
 impl<T: TypeId, D: Data, M: Message> Default for Chunk<T, D, M> {
     fn default() -> Self {
@@ -42,12 +59,16 @@ impl<T: TypeId, D: Data, M: Message> Default for Chunk<T, D, M> {
             messages: flume::unbounded(),
             contained_attr: Vec::new(),
             __messages_heap: BinaryHeap::new(),
+            __messages_locations: todo!(),
         }
     }
 }
 
 lazy_static! {
     static ref ALL_POS: Vec<Pos> = {
+        fn all_pos<const S: i32>() -> impl Iterator<Item = Pos> {
+            (0..S).flat_map(|x| (0..S).flat_map(move |y| (0..S).map(move |z| Pos::new(x, y, z))))
+        }
         let size = CHUNK_SIZE as i32;
         let mut vec: Vec<_> = Vec::with_capacity(CHUNK_SIZE.pow(3) as usize);
         for x in 0..size {
@@ -61,9 +82,6 @@ lazy_static! {
     };
 }
 
-fn all_pos<const S: i32>() -> impl Iterator<Item = Pos> {
-    (0..S).flat_map(|x| (0..S).flat_map(move |y| (0..S).map(move |z| Pos::new(x, y, z))))
-}
 
 #[derive(Debug)]
 pub struct PosMsg<M: Message + Debug>(Pos, M);

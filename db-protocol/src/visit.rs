@@ -22,18 +22,31 @@ use prelude::*;
 
 ///AKA the updater.
 
-pub trait VoxelVisitor<'a, T: TypeId, D: Data, Msg: Message, Map: crate::Map<'a, T, D, Msg>> {
+pub trait VoxelVisitor<T: TypeId, D: Data, Msg: Message, Map: crate::Map<T, D, Msg>> {
     fn predicate(&self) -> &VisitingPredicate<T>;
     fn predicate_for_mut(&self) -> &VisitingPredicate<T>;
-    fn visit(&self, map: &Map , voxel: &Voxel<T, D>, pos: Pos);
-    fn visit_mut(&self, voxel: &mut Voxel<T, D>, inbox: &[Msg], pos: Pos);
+    fn visit(&self, voxel: VoxelVisit<'_, T,D,Msg,Map>);
+    fn visit_mut(&self, voxel: VoxelVisitMut<'_, T,D,Msg>);
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct VisitingPredicate<T: TypeId> {
-    pub loaded: bool,
     pub with_attributes: Vec<T::AttrId>,
-    pub of_type: Vec<T>,
+}
+
+#[derive(Debug)]
+pub struct VoxelVisit<'a, T: TypeId, D: Data, Msg: Message, Map: crate::Map<T, D, Msg>>{
+    pub position: Pos,
+    pub voxel: &'a Voxel<T,D>,
+    pub messages: &'a [Msg],
+    pub map: &'a Map
+}
+
+#[derive(Debug)]
+pub struct VoxelVisitMut<'a, T: TypeId, D: Data, Msg: Message>{
+    pub position: Pos,
+    pub voxel: &'a mut Voxel<T,D>,
+    pub messages: &'a [Msg],
 }
 
 pub trait Message: Send + Debug + Sync {

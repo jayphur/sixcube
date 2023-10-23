@@ -77,7 +77,7 @@ impl<T: Default + Debug + Send> OctreeTrait<T> for Octree<T> {
         self.memory.as_mut_slice()
     }
 
-    fn get_raw_many_mut(&mut self, many: &Vec<usize>) -> Vec<&mut T> {
+    fn get_many_raw_mut(&mut self, many: &Vec<usize>) -> Vec<&mut T> {
         let mut current: usize = 0;
         let mut mut_ref = self.memory.iter_mut();
         let mut output = Vec::with_capacity(many.len());
