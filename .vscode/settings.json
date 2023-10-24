@@ -3,6 +3,7 @@
         "Octree",
         "recarr",
         "rstest",
+        "spatialtree",
         "Unindexed"
     ]
 }

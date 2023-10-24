@@ -1,104 +1,126 @@
-#![feature(return_position_impl_trait_in_trait)]
-use core_obj::*;
+use std::marker::PhantomData;
+
+use core_obj::{TypeId, Data, Pos};
 use db_protocol::visit::{Message, VoxelVisitor};
-use octree::Octree;
-use prelude::*;
-use rayon::{prelude::{
-    IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator, ParallelIterator,
-}, slice::ParallelSlice};
+use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
+use spatialtree::{OctTree, OctVec, Tree};
+use chunk::Chunk;
 
 mod chunk;
-mod octree;
 
-const CHUNK_SIZE: usize = 4;
-const CHUNK_SIZE_I32: i32 = 4;
+// Tree tree tree tree tree!!!!!
 
-// Chunk-Wise pos
-type CwPos = Pos;
+//Smallest chunk 32^3
+//nah maybe 8^3
 
 #[derive(Debug)]
-pub struct Map<T: TypeId, D: Data, M: Message> {
-    tree: Octree<chunk::Chunk<T, D, M>>,
-    loaded_chunks: Vec<CwPos>,
-    to_update_memory_index: Vec<usize>, // Buffer from converting tree to it's inner slice
-    to_update_cw_pos: Vec<CwPos>,       // Buffer
+pub struct Map<T, D, M> 
+where T: TypeId, D: Data, M: Message 
+{
+    __marker: PhantomData<(T,D,M)>,
+    tree: OctTree<Chunk<T,D,M>, OctVec<u32>>,
+    to_update: Vec<usize>
 }
-
-/// DEPENDENCY INVERSION
-trait OctreeTrait<T: Default + Debug>: Debug + Default + Send {
-    fn new(size: u16) -> Self;
-    fn get_weak(&self, pos: &CwPos) -> Option<&T>;
-    /// Will not create a new one if this position doesn't exist.
-    fn get_mut_weak(&mut self, pos: &CwPos) -> Option<&mut T>;
-    /// Will create a new one if this position doesn't exist.
-    fn get_mut_strong(&mut self, pos: &CwPos) -> &mut T;
-    fn find_index(&self, pos: &CwPos) -> Option<usize>;
-    fn get_raw(&self, index: usize) -> Option<&T>;
-    fn get_raw_mut(&mut self, index: usize) -> Option<&mut T>;
-    fn slice_raw(&self) -> &[T];
-    fn slice_raw_mut(&mut self) -> &mut [T];
-    /// An overall crappy function
-    fn get_many_raw_mut(&mut self, many: &Vec<usize>) -> Vec<&mut T>;
-}
-trait ChunkTrait<T: TypeId, D: Data, M: Message>: Debug + Default + Send {
-    fn contains_attr(&self, attr: T::AttrId) -> bool;
-    /// Not Cw, relative.
-    fn tell(&self, pos: Pos, msg: M);
-    /// Not Cw, relative.
-    fn get(&self, pos: Pos) -> &Option<Voxel<T, D>>;
-    /// Not Cw, relative.
-    fn get_mut(&mut self, pos: Pos) -> &mut Option<Voxel<T, D>>;
-    /// Not Cw, relative.
-    fn get_visited<V>(&self, map: &Map<T,D,M>, cw_pos: CwPos, visitor: &V) 
-    where V: VoxelVisitor<T,D, M, Map<T,D,M>> + Send + Sync;
-}
-
-impl<'a, T, D, M> db_protocol::Map<T, D, M> for Map<T, D, M>
-where T: TypeId + 'a, D: Data + 'a, M: Message + 'a 
+impl<T, D, M> db_protocol::Map<T,D,M> for Map<T,D,M>
+where T: TypeId, D: Data, M: Message 
 {
     fn get_type(&self, pos: Pos) -> Option<T> {
-        Some(
-            self.tree
-                .get_weak(&(pos / CHUNK_SIZE as i32))?
-                .get(pos)
-                .as_ref()?
-                .type_id,
-        )
+        todo!()
     }
 
     fn tell(&self, pos: Pos, msg: M) {
-        let Some(chunk) = self.tree.get_weak(&(pos / CHUNK_SIZE as i32)) else {return ();};
-        chunk.tell(pos, msg);
+        todo!()
     }
 
     fn visit_each<'v, V>(&self, visitors: &'v [V])
-    where V: 'v + Send + Sync + VoxelVisitor<T,D,M, Self> {
-        visitors.par_iter().for_each(|visit|{
-            let predicate = visit.predicate();
-            self.to_update_memory_index
-                .par_iter()
-                .zip(self.to_update_cw_pos.par_iter())
-                .filter_map(|(index, cw_pos)|{
-                    let Some(chunk) = self.tree.slice_raw().get(*index) else {
-                        return None;
-                    };
-                    Some((chunk, cw_pos))
-                })
-                .filter(|(chunk, cw_pos)|{
-                    predicate.with_attributes
-                    .par_iter()
-                    .any(|attr|{
-                        chunk.contains_attr(*attr)
-                    })
-                }).for_each(|(valid_chunk, cw_pos)|{
-                    valid_chunk.get_visited(self, *cw_pos, visit)
-                })
+    where V: 'v + Send + Sync + db_protocol::visit::VoxelVisitor<T,D,M, Self> {
+        self.to_update.par_iter().map(|index|{
+            self.tree.get_chunk(*index)
+        }).map(|chunk_container|{
+            let pos = chunk_container.position().pos;
+            (
+                Pos::new(u32_to_i32(pos[0]), u32_to_i32(pos[1]), u32_to_i32(pos[2])),
+                &chunk_container.chunk
+            )
+        }).for_each(|(pos, chunk)|{
+            visitors.par_iter().filter(|visitor|{
+                if visitor.predicate().with_attributes.len() == 0{
+                    true
+                } else {
+                    visitor.predicate().with_attributes.iter().any(|a|chunk.contains_attr(a))
+                }
+            }).for_each(|visitor|{
+                chunk.get_visited(pos, visitor)
+            });
         })
     }
 
     fn visit_each_mut<'v, V>(&mut self, visitors: &'v [V])
-    where V: 'v + Send + Sync + VoxelVisitor<T,D,M, Self> {
-        let memory = self.tree.slice_raw_mut();
+    where V: 'v + Send + Sync + db_protocol::visit::VoxelVisitor<T,D,M, Self> {
         todo!()
+    }
+}
+
+impl<T, D, M> Default for Map<T,D,M>
+where T: TypeId, D: Data, M: Message 
+{
+    fn default() -> Self {
+        Self { 
+            __marker: Default::default(), 
+            to_update: Default::default(),
+            tree: OctTree::<Chunk<T,D,M>, OctVec<u32>>::new(), 
+        }
+    }
+}
+
+
+const U32_MIDPOINT: u32 = 32768;
+
+pub fn i32_to_u32(val: i32) -> u32{
+    if val.is_negative(){
+        val.abs() as u32 
+    } else {
+        val as u32 + U32_MIDPOINT
+    }
+}
+pub fn u32_to_i32(val: u32) -> i32{
+    use std::cmp::Ordering;
+    match val.cmp(&U32_MIDPOINT){
+        Ordering::Less => {
+            -(val as i32)
+        },
+        Ordering::Equal => {
+            0
+        },
+        Ordering::Greater => {
+            (val - U32_MIDPOINT) as i32
+        },
+    }
+}
+
+pub trait ChunkTrait<T,D,M>
+where T: TypeId, D: Data, M: Message 
+{
+    fn contains_attr(&self, attr_id: &T::AttrId) -> bool;    
+    fn get_visited<V>(&self, pos: Pos, visitor: &V)
+    where V: Send + Sync + db_protocol::visit::VoxelVisitor<T,D,M,Map<T,D,M>> ;
+}
+
+#[cfg(test)]
+mod test_conv{
+
+    #[test]
+    fn there_and_back(){
+        let start: i32 = 31785;
+        assert_eq!(start, super::u32_to_i32(super::i32_to_u32(start)));
+
+        let start: i32 = -3185;
+        assert_eq!(start, super::u32_to_i32(super::i32_to_u32(start)));
+
+        let start: i32 = -3;
+        assert_eq!(start, super::u32_to_i32(super::i32_to_u32(start)));
+        
+        let start: i32 = 0;
+        assert_eq!(start, super::u32_to_i32(super::i32_to_u32(start)));
     }
 }
