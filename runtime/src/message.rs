@@ -1,8 +1,8 @@
-use db_protocol::visit::{ResponseRx, ResponseTx};
+use world_protocol::visit::{ResponseRx, ResponseTx};
 
 #[derive(Debug)]
 pub enum Message {}
-impl db_protocol::visit::Message for Message {
+impl world_protocol::visit::Message for Message {
     type ResponseRx<T> = MsgResponse<T>;
     type ResponseTx<T> = MsgResponder<T>;
 }

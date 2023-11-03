@@ -1,17 +1,17 @@
-use data::Data;
-use id::TypeId;
-use message::Message;
-
+use core_obj::World;
+use dim::Dim;
+use voxel::Voxel;
 mod data;
-mod id;
 mod message;
-
-type Dim<'i> = core_obj::Dim<TypeId<'i>, Data, Map<'i>>;
-type Map<'i> = world_db::Map<TypeId<'i>, Data, Message>;
+mod voxel;
+mod dim;
 
 pub struct ScRuntime<'i> {
-    dims: Vec<Dim<'i>>,
+    world: World<Voxel<'i>, Dim<'i>>,
 }
 impl ScRuntime<'_> {
-    
+    pub fn init(){
+
+    }
 }
+
