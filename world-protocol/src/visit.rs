@@ -1,4 +1,4 @@
-use core_obj::{AttrId, Data, Pos, TypeId, Voxel};
+use core_obj::{Pos, Type, Voxel, AttrType};
 use prelude::*;
 
 // Using visitor pattern.
@@ -11,10 +11,6 @@ use prelude::*;
 // RESPOND PHASE:
 //     Each voxel will check its queue and do stuff. Mutable access to all of the voxel's queues.
 //     The stuff is like responding to "GetAttr"s, etc.
-
-// Respond and Apply can happen at the same time... (with blocking for responses and work stealing...)
-
-// APPLY PHASE:
 //     Each voxel will use up the remaining stuff in queues and stuff in responses.
 //     Mutable access to each.
 
@@ -22,30 +18,30 @@ use prelude::*;
 
 ///AKA the updater.
 
-pub trait VoxelVisitor<T: TypeId, D: Data, Msg: Message, Map: crate::Map<T, D, Msg>> {
-    fn predicate(&self) -> &VisitingPredicate<T>;
-    fn predicate_for_mut(&self) -> &VisitingPredicate<T>;
-    fn visit(&self, voxel: VoxelVisit<'_, T,D,Msg,Map>);
-    fn visit_mut(&self, voxel: VoxelVisitMut<'_, T,D,Msg>);
+pub trait VoxelVisitor<Vox: Voxel, Map: crate::Map<Vox>> {
+    fn predicate(&self) ->         &VisitingPredicate<Vox::AttrType>;
+    fn predicate_for_mut(&self) -> &VisitingPredicate<Vox::AttrType>;
+    fn visit(&self, voxel: VoxelVisit<'_, Vox,Map>);
+    fn visit_mut(&self, voxel: VoxelVisitMut<'_, Vox,Map::Msg>);
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
-pub struct VisitingPredicate<T: TypeId> {
-    pub with_attributes: Vec<T::AttrId>,
+pub struct VisitingPredicate<A: AttrType> {
+    pub with_attributes: Vec<A>,
 }
 
 #[derive(Debug)]
-pub struct VoxelVisit<'a, T: TypeId, D: Data, Msg: Message, Map: crate::Map<T, D, Msg>>{
+pub struct VoxelVisit<'a, Vox: Voxel, Map: crate::Map<Vox>>{
     pub position: Pos,
-    pub voxel: &'a Voxel<T,D>,
-    pub messages: &'a [Msg],
-    pub map: &'a Map
+    pub voxel: &'a Vox,
+    pub messages: &'a [Map::Msg],
+    pub map: &'a Map,
 }
 
 #[derive(Debug)]
-pub struct VoxelVisitMut<'a, T: TypeId, D: Data, Msg: Message>{
+pub struct VoxelVisitMut<'a, Vox: Voxel, Msg: Message>{
     pub position: Pos,
-    pub voxel: &'a mut Voxel<T,D>,
+    pub voxel: &'a mut Vox,
     pub messages: &'a [Msg],
 }
 
@@ -59,6 +55,9 @@ pub trait Message: Send + Debug + Sync {
 }
 pub trait ResponseRx<T> {}
 pub trait ResponseTx<T> {}
+
+
+
 
 pub mod fake_types {
     use super::{Message, ResponseRx, ResponseTx};

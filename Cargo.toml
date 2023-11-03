@@ -3,7 +3,7 @@ members = [
     "plugin/*",
     "prelude",
     "core-obj",
-    "db-protocol",
+    "world-protocol",
     "world-db",
     "runtime",
 ]

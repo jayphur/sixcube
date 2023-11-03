@@ -425,14 +425,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "db-protocol"
-version = "0.1.0"
-dependencies = [
- "core-obj",
- "prelude",
-]
-
-[[package]]
 name = "deranged"
 version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -875,6 +867,15 @@ checksum = "8adf3ddd720272c6ea8bf59463c04e0f93d0bbf7c5439b691bca2987e0270897"
 dependencies = [
  "equivalent",
  "hashbrown 0.14.1",
+]
+
+[[package]]
+name = "itertools"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1c173a5686ce8bfa551b3563d0c2170bf24ca44da99c7ca4bfdab5418c3fe57"
+dependencies = [
+ "either",
 ]
 
 [[package]]
@@ -1623,10 +1624,11 @@ name = "sc-runtime"
 version = "0.1.0"
 dependencies = [
  "core-obj",
- "db-protocol",
+ "fxhash",
  "oneshot",
  "prelude",
  "world-db",
+ "world-protocol",
 ]
 
 [[package]]
@@ -2771,12 +2773,22 @@ name = "world-db"
 version = "0.1.0"
 dependencies = [
  "core-obj",
- "db-protocol",
  "flume",
+ "itertools",
  "prelude",
  "rayon",
  "rstest",
  "spatialtree",
+ "vector3d",
+ "world-protocol",
+]
+
+[[package]]
+name = "world-protocol"
+version = "0.1.0"
+dependencies = [
+ "core-obj",
+ "prelude",
 ]
 
 [[package]]
