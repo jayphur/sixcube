@@ -1,4 +1,4 @@
-use core_obj::{AttrType, AttrValue};
+use core_obj::{AttrType, Value};
 use world_db::Map;
 
 use crate::{voxel::Voxel, data::Data};
@@ -18,6 +18,7 @@ impl<'i> core_obj::Dim<Voxel<'i>> for Dim<'i>{
 #[derive(Debug, Default, Clone, Copy)]
 pub struct DimType{
     uuid: u32,
+    // pub fields: ...
 }
 impl PartialEq for DimType{
     fn eq(&self, other: &Self) -> bool {
@@ -32,7 +33,7 @@ impl<'i> core_obj::Type<&'i DimAttr> for &'i DimType{
 #[derive(Debug)]
 pub struct DimAttr{
     uuid: u32,
-    default_value: AttrValue,
+    default_value: Value,
 }
 impl PartialEq for DimAttr{
     fn eq(&self, other: &Self) -> bool {
@@ -42,7 +43,7 @@ impl PartialEq for DimAttr{
 impl<'i> AttrType for &'i DimAttr{
     type Obj = Dim<'i>;
 
-    fn new(&self) -> core_obj::Attr<Self> {
+    fn new_attr(&self) -> core_obj::Attr<Self> {
         core_obj::Attr{
             my_type: self.clone(), // It is my intention to clone the reference.
             val: self.default_value.clone(),

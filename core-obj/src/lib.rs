@@ -1,10 +1,11 @@
-use std::{fmt::Debug, marker::PhantomData};
+use std::{fmt::Debug, marker::PhantomData, default};
 
 pub type Pos = vector3d::Vector3d<i32>;
 
 pub trait Voxel: Debug + Clone{
     type Type: Type<Self::AttrType, Obj = Self, >;
     type AttrType: AttrType;
+    type ActionType: ActionType;
     type Data;
 
     fn get_type(&self) -> &Self::Type;
@@ -19,31 +20,45 @@ pub trait Dim<V: Voxel>: Debug + Clone{
 #[derive(Debug, Default, Clone)]
 pub struct World<V: Voxel,D: Dim<V>> {
     pub dims:         Vec<D>,
-    __marker: PhantomData<V>
+    pub _m: PhantomData<V>
 }
 
 /// Assuming there is no mixing type id of different objects by faith (and checking)
-pub trait Type<A: AttrType>: PartialEq + Copy + Clone + Debug + Send + Sync {
+pub trait Type<A: AttrType>: Debug + PartialEq + Copy + Clone + Debug + Send + Sync {
     type Obj;
 }
 
-pub trait Action: PartialEq + Copy + Clone + Send + Sync {
-    
+pub trait ActionType: Debug + PartialEq + Copy + Clone + Send + Sync {
+    type Obj;   
+    fn new_action(&self) -> Action<Self>;
+}
+#[derive(Debug)]
+pub struct Action<A: ActionType>{
+    pub my_type: A,
+    pub val: Value,
 }
 
-pub trait AttrType: PartialEq + Copy + Clone + Debug + Send + Sync{
+#[derive(Debug, Default)]
+pub enum ActionResult{
+    #[default]
+    Success,
+    Failure,
+}
+
+
+pub trait AttrType: Debug + PartialEq + Copy + Clone + Debug + Send + Sync{
     type Obj;
-    fn new(&self) -> Attr<Self>;
+    fn new_attr(&self) -> Attr<Self>;
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct Attr<A: AttrType> {
     pub my_type: A,
-    pub val: AttrValue,
+    pub val: Value,
 }
 
 #[derive(Debug, Default, Clone, PartialEq)]
-pub enum AttrValue {
+pub enum Value {
     #[default]
     Unset,
     Boolean(bool),

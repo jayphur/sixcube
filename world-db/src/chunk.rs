@@ -1,15 +1,15 @@
 use std::marker::PhantomData;
 
 use core_obj::{Type, Data, Pos, Voxel};
-use world_protocol::visit::{Message, VoxelVisitor};
+use world_protocol::{visit::VoxelVisitor, message::VoxelMsg};
 
-use crate::{ChunkTrait, CHUNK_SIZE, LocalPos, message::Msg};
+use crate::{ChunkTrait, CHUNK_SIZE, LocalPos};
 
 #[derive(Debug, Clone)]
-pub struct Chunk<V: Voxel + Send + Sync>{
-    voxels: [[[Option<V>; CHUNK_SIZE]; CHUNK_SIZE]; CHUNK_SIZE],
-    contains_attr: Vec<  <V as Voxel>::AttrType  >, // a mess bro
-    messages: (flume::Sender<(LocalPos,Msg)>, flume::Receiver<(LocalPos,Msg)>),
+pub struct Chunk<Vox: Voxel + Send + Sync>{
+    voxels: [[[Option<Vox>; CHUNK_SIZE]; CHUNK_SIZE]; CHUNK_SIZE],
+    contains_attr: Vec<  <Vox as Voxel>::AttrType  >, // a mess bro
+    messages: (flume::Sender<(LocalPos,VoxelMsg<Vox>)>, flume::Receiver<(LocalPos,VoxelMsg<Vox>)>),
 }
 
 impl<Vox: Voxel + Send + Sync> ChunkTrait<Vox> for Chunk<Vox>{
@@ -21,7 +21,7 @@ impl<Vox: Voxel + Send + Sync> ChunkTrait<Vox> for Chunk<Vox>{
         Some(*self.voxels[pos.z][pos.y][pos.x].as_ref()?.get_type())
     }
 
-    fn tell(&self, pos: LocalPos, msg: Msg) {
+    fn tell(&self, pos: LocalPos, msg: VoxelMsg<Vox>) {
         self.messages.0.send((pos,msg)).unwrap();
     }
 

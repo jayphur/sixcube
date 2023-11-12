@@ -1,14 +1,12 @@
 use std::{marker::PhantomData, iter};
 
 use core_obj::{Type, Data, Pos};
-use world_protocol::visit::VoxelVisitor;
-use message::Msg;
+use world_protocol::{visit::VoxelVisitor, message::VoxelMsg};
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator, ParallelBridge, IntoParallelIterator};
 use spatialtree::{OctTree, OctVec, Tree};
 use chunk::Chunk;
 
 mod chunk;
-mod message;
 
 
 // Tree tree tree tree tree!!!!!
@@ -37,7 +35,7 @@ impl<Vox: core_obj::Voxel + Send  + Sync> world_protocol::Map<Vox> for Map<Vox>
         }
     }
 
-    fn tell(&self, pos: Pos, msg: Msg) {
+    fn tell(&self, pos: Pos, msg: VoxelMsg<Vox>) {
         if let Some(chunk) = self.loaded_chunks.get_chunk_by_position(pos_to_oct_pos(pos)){
             chunk.tell(pos_to_local_pos(pos), msg)
         }
@@ -92,8 +90,6 @@ impl<Vox: core_obj::Voxel + Send  + Sync> world_protocol::Map<Vox> for Map<Vox>
                 }
             })
     }
-
-    type Msg = Msg;
 }
 
 impl<Vox: core_obj::Voxel + Send + Sync> Default for Map<Vox>{
@@ -152,7 +148,7 @@ pub trait ChunkTrait<Vox: core_obj::Voxel + Send + Sync>{
     fn get_visited_mut<V>(&mut self, pos: Pos, visitor: &V)
     where V: Send + Sync + world_protocol::visit::VoxelVisitor<Vox, Map<Vox>> ;
     fn get_type(&self, pos: LocalPos) -> Option<Vox::Type>;
-    fn tell(&self, pos: LocalPos, msg: Msg); 
+    fn tell(&self, pos: LocalPos, msg: VoxelMsg<Vox>); 
 }
 
 #[cfg(test)]
