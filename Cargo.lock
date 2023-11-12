@@ -2788,6 +2788,7 @@ name = "world-protocol"
 version = "0.1.0"
 dependencies = [
  "core-obj",
+ "oneshot",
  "prelude",
 ]
 

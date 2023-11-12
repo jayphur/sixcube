@@ -1,17 +1,21 @@
 use core_obj::World;
 use dim::Dim;
 use voxel::Voxel;
+
 mod data;
-mod message;
 mod voxel;
 mod dim;
+mod init;
 
 pub struct ScRuntime<'i> {
-    world: World<Voxel<'i>, Dim<'i>>,
+    pub(crate) world: World<Voxel<'i>, Dim<'i>>,
 }
-impl ScRuntime<'_> {
-    pub fn init(){
+impl<'i> ScRuntime<'i> {
+    pub fn update(){
 
     }
 }
 
+pub struct ScRuntimeConfig{
+    
+}
