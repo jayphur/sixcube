@@ -43,7 +43,7 @@ impl PartialEq for DimAttr{
 impl<'i> AttrType for &'i DimAttr{
     type Obj = Dim<'i>;
 
-    fn new(&self) -> core_obj::Attr<Self> {
+    fn new_attr(&self) -> core_obj::Attr<Self> {
         core_obj::Attr{
             my_type: self.clone(), // It is my intention to clone the reference.
             val: self.default_value.clone(),

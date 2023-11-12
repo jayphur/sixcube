@@ -29,7 +29,8 @@ pub trait Type<A: AttrType>: Debug + PartialEq + Copy + Clone + Debug + Send + S
 }
 
 pub trait ActionType: Debug + PartialEq + Copy + Clone + Send + Sync {
-    
+    type Obj;   
+    fn new_action(&self) -> Action<Self>;
 }
 #[derive(Debug)]
 pub struct Action<A: ActionType>{
@@ -47,7 +48,7 @@ pub enum ActionResult{
 
 pub trait AttrType: Debug + PartialEq + Copy + Clone + Debug + Send + Sync{
     type Obj;
-    fn new(&self) -> Attr<Self>;
+    fn new_attr(&self) -> Attr<Self>;
 }
 
 #[derive(Debug, Default, Clone)]

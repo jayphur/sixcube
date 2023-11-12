@@ -20,6 +20,7 @@ impl<'i> core_obj::Voxel for Voxel<'i>{
 
 }
 
+//FIXME: A lot of copy-pasted code below here......... make this into a trait or macro?
 #[derive(Debug, Default, Clone, Copy)]
 pub struct VoxelType{
     uuid: u32,
@@ -48,7 +49,7 @@ impl PartialEq for VoxelAttr{
 impl<'i> AttrType for &'i VoxelAttr{
     type Obj = Voxel<'i>;
 
-    fn new(&self) -> core_obj::Attr<Self> {
+    fn new_attr(&self) -> core_obj::Attr<Self> {
         core_obj::Attr{
             my_type: self.clone(), // It is my intention to clone the reference.
             val: self.default_value.clone(),
@@ -59,6 +60,7 @@ impl<'i> AttrType for &'i VoxelAttr{
 #[derive(Debug)]
 pub struct VoxelAction{
     uuid: u32,  
+    default_val: Value,
 }
 impl PartialEq for VoxelAction{
     fn eq(&self, other: &Self) -> bool {
@@ -66,5 +68,12 @@ impl PartialEq for VoxelAction{
     }
 }
 impl<'i> ActionType for &'i VoxelAction{
+    type Obj = Voxel<'i>;
 
+    fn new_action(&self) -> core_obj::Action<Self> {
+        core_obj::Action { 
+            my_type: self.clone(), 
+            val: self.default_val.clone()
+        }
+    }
 }
