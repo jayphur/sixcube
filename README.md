@@ -12,7 +12,7 @@ plugins written in python or maybe rust too. Current thinking is to compile down
 
 cubic chunk system for endless and expansive maps (?)
 
-support for loading chunks at arbitrary levels of detail. this should enable massive "render distance" (?)
+Unlimited LOD for chunk rendering (requires support for loading chunks at arbitrary levels of detail.) unlimited "render distance" (?)
 
 async chunk loading (?)
 
