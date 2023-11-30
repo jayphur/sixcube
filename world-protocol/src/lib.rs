@@ -57,21 +57,12 @@ where
     where V: 'v + Send + Sync + VisitorApply<Vox, Self>;
 }
 
-/// I want to specify that positions here are global.
-pub trait Chunk<Vox: Voxel>{
+/// I want to specify that positions here are global. 
+pub trait Chunk<Vox: Voxel>{ //TODO: Consider removing this whole trait
     fn msg(&self, pos: Pos, msg: VoxelMsg<Vox>);
     // some utility "getters". Don't use these for iteration.
     fn get_pos(&self, pos: Pos) -> BoundsResult<&Option<Vox>>;
     fn get_pos_mut(&mut self, pos: Pos) -> BoundsResult<&mut Option<Vox>>;
-
-    fn read_phase<M, V>(&self, visitor: V) 
-    where M: Map<Vox>, V: VisitorRead<Vox, M>;
-
-    fn respond_phase<M, V>(&mut self, visitor: V) 
-    where M: Map<Vox>, V: VisitorRespond<Vox, M>;
-
-    fn apply_phase<M, V>(&mut self, visitor: V) 
-    where M: Map<Vox>, V: VisitorApply<Vox, M>;
 }
 
 #[derive(Debug, Clone, Copy)]

@@ -1,7 +1,7 @@
 
 
 use core_obj::{Type, Data, Pos, Voxel};
-use world_protocol::{message::VoxelMsg};
+use world_protocol::{message::VoxelMsg, VisitorRead, VisitorRespond, VisitorApply};
 
 use crate::{CHUNK_SIZE, LocalPos};
 
@@ -24,21 +24,6 @@ impl<Vox: Voxel + Send + Sync> world_protocol::Chunk<Vox> for Chunk<Vox>{
     fn get_pos_mut(&mut self, pos: Pos) -> world_protocol::BoundsResult<&mut Option<Vox>> {
         todo!()
     }
-
-    fn read_phase<M, V>(&self, visitor: V) 
-    where M: world_protocol::Map<Vox>, V: world_protocol::VisitorRead<Vox, M> {
-        todo!()
-    }
-
-    fn respond_phase<M, V>(&mut self, visitor: V) 
-    where M: world_protocol::Map<Vox>, V: world_protocol::VisitorRespond<Vox, M> {
-        todo!()
-    }
-
-    fn apply_phase<M, V>(&mut self, visitor: V) 
-    where M: world_protocol::Map<Vox>, V: world_protocol::VisitorApply<Vox, M> {
-        todo!()
-    }
 }
 
 
@@ -48,6 +33,21 @@ impl<Vox: Voxel + Send + Sync> super::ChunkTrait<Vox> for Chunk<Vox>{
     }
 
     fn tell(&self, pos: LocalPos, msg: VoxelMsg<Vox>) {
+        todo!()
+    }
+
+    fn read_phase<V>(&self, visitor: V) 
+    where V: VisitorRead<Vox, crate::Map<Vox>> {
+        todo!()
+    }
+
+    fn respond_phase<V>(&mut self, visitor: V) 
+    where V: VisitorRespond<Vox,  crate::Map<Vox>> {
+        todo!()
+    }
+
+    fn apply_phase<V>(&mut self, visitor: V) 
+    where V: VisitorApply<Vox,  crate::Map<Vox>> {
         todo!()
     }
 }
