@@ -24,7 +24,7 @@ impl<'i> core_obj::Voxel for Voxel<'i>{
 #[derive(Debug, Default, Clone, Copy)]
 pub struct VoxelType{
     uuid: u32,
-    // pub fields: ...
+    // pub ...stuff a type defines??
 }
 impl PartialEq for VoxelType{
     fn eq(&self, other: &Self) -> bool {
