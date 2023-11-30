@@ -1,7 +1,7 @@
 
 
 use core_obj::{Type, Data, Pos, Voxel};
-use world_protocol::{message::VoxelMsg, VisitorRead, VisitorRespond, VisitorApply};
+use world_protocol::{message::VoxelMsg, VisitorRead, VisitorRespond, VisitorApply, VisitingPredicate};
 
 use crate::{CHUNK_SIZE, LocalPos};
 
@@ -36,18 +36,22 @@ impl<Vox: Voxel + Send + Sync> super::ChunkTrait<Vox> for Chunk<Vox>{
         todo!()
     }
 
-    fn read_phase<V>(&self, visitor: V) 
+    fn read_phase<V>(&self, visitor: &V) 
     where V: VisitorRead<Vox, crate::Map<Vox>> {
         todo!()
     }
 
-    fn respond_phase<V>(&mut self, visitor: V) 
+    fn respond_phase<V>(&mut self, visitor: &V) 
     where V: VisitorRespond<Vox,  crate::Map<Vox>> {
         todo!()
     }
 
-    fn apply_phase<V>(&mut self, visitor: V) 
+    fn apply_phase<V>(&mut self, visitor: &V) 
     where V: VisitorApply<Vox,  crate::Map<Vox>> {
+        todo!()
+    }
+
+    fn visitor_matches<'a>(&self, predicated: VisitingPredicate<'a, Vox>) -> bool {
         todo!()
     }
 }

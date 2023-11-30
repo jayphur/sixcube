@@ -65,11 +65,6 @@ pub trait Chunk<Vox: Voxel>{ //TODO: Consider removing this whole trait
     fn get_pos_mut(&mut self, pos: Pos) -> BoundsResult<&mut Option<Vox>>;
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct ForEachPredicate{
-    pub exists: bool,
-}
-
 #[derive(Debug)]
 pub enum BoundsResult<T>{
     Ok(T),
@@ -77,19 +72,23 @@ pub enum BoundsResult<T>{
 }
 
 pub trait VisitorRead<Vox: Voxel, Map: crate::Map<Vox>> {
-    fn predicate_attr(&self) -> &[Vox::AttrType];
+    fn predicate<'a>(&'a self) -> VisitingPredicate<'a,Vox>;
 
     fn visit(&self, pos: Pos, vox: &Vox, map: &Map);
 }
 pub trait VisitorRespond<Vox: Voxel, Map: crate::Map<Vox>> {
-    fn predicate_attr(&self) -> &[Vox::AttrType];
+    fn predicate<'a>(&'a self) -> VisitingPredicate<'a,Vox>;
 
     fn visit<'a, I> (&'a self, pos: Pos, vox: &Vox, messages: I) 
     where Vox: 'a, I: Iterator<Item = &'a mut VoxelMsg<Vox>>;
 }
 pub trait VisitorApply<Vox: Voxel, Map: crate::Map<Vox>> {
-    fn predicate_attr(&self) -> &[Vox::AttrType];
+    fn predicate<'a>(&'a self) -> VisitingPredicate<'a,Vox>;
 
     fn visit<'a, I> (&'a self, pos: Pos, vox: &mut Vox, messages: I) 
     where Vox: 'a, I: Iterator<Item = &'a mut VoxelMsg<Vox>>{}
+}
+
+pub struct VisitingPredicate<'a, Vox: Voxel>{
+    attr: &'a [Vox::AttrType],
 }

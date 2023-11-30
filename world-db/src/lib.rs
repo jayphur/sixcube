@@ -1,8 +1,8 @@
 use std::{marker::PhantomData, iter};
 
 use conversion::pos_to_local_pos;
-use core_obj::{Type, Data, Pos};
-use world_protocol::{message::VoxelMsg, VisitorRead, VisitorRespond, VisitorApply};
+use core_obj::{Type, Data, Pos, Voxel};
+use world_protocol::{message::VoxelMsg, VisitorRead, VisitorRespond, VisitorApply, VisitingPredicate};
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator, ParallelBridge, IntoParallelIterator};
 use spatialtree::{OctTree, OctVec, Tree};
 use chunk::Chunk;
@@ -58,12 +58,33 @@ impl<Vox: core_obj::Voxel + Send  + Sync> world_protocol::Map<Vox> for Map<Vox>
 
     fn read_phase<'v, V>(&self, visitors: &'v [V])
     where V: 'v + Send + Sync + world_protocol::VisitorRead<Vox,Self> {
-        todo!()
+        visitors
+            .par_iter()
+            .for_each(|visitor|{
+                (0..self.loaded_chunks.get_num_chunks())
+                    .into_par_iter()
+                    .map(|index|self.loaded_chunks.get_chunk(index))
+                    .filter(|chunk|{
+                        chunk.chunk.visitor_matches(visitor.predicate())
+                    })
+                    .for_each(|chunk|{
+                        chunk.chunk.read_phase(visitor)
+                    })
+            });
     }
 
     fn respond_phase<'v, V>(&mut self, visitors: &'v [V])
     where V: 'v + Send + Sync + world_protocol::VisitorRespond<Vox, Self> {
-        todo!()
+        self.loaded_chunks.iter_chunks()
+            .map(|(_, chunk)|chunk)
+            .for_each(|chunk|{
+                visitors.par_iter()
+                .filter(|visitor|chunk.chunk.visitor_matches(visitor.predicate()))
+                .for_each(|visitor|{
+                    chunk.
+                })
+            })
+            
     }
 
     fn apply_phase<'v, V>(&mut self, visitors: &'v [V])
@@ -85,14 +106,17 @@ impl<Vox: core_obj::Voxel + Send + Sync> Default for Map<Vox>{
 //DEPENDENCY INVERSION
 pub trait ChunkTrait<Vox: core_obj::Voxel + Send + Sync>{
     fn get_type(&self, pos: LocalPos) -> Option<Vox::Type>;
+
     fn tell(&self, pos: LocalPos, msg: VoxelMsg<Vox>);
 
-    fn read_phase<V>(&self, visitor: V) 
+    fn visitor_matches<'a>(&self, predicated: VisitingPredicate<'a, Vox>) -> bool;
+
+    fn read_phase<V>(&self, visitor: &V) 
     where V: VisitorRead<Vox, Map<Vox>>;
 
-    fn respond_phase<V>(&mut self, visitor: V) 
+    fn respond_phase<V>(&mut self, visitor: &V) 
     where V: VisitorRespond<Vox,  Map<Vox>>;
 
-    fn apply_phase<V>(&mut self, visitor: V) 
+    fn apply_phase<V>(&mut self, visitor: &V) 
     where V: VisitorApply<Vox,  Map<Vox>>;
 }
