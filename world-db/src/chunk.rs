@@ -12,8 +12,9 @@ Vox: core_obj::Voxel + Send + Sync,
 {
     voxels: [[[Option<Vox>; CHUNK_SIZE]; CHUNK_SIZE]; CHUNK_SIZE],
     contains_attr: Vec<  <Vox as Voxel>::AttrType  >, // a mess bro
-    visitors_needed: Vec<usize>,
+    visitors_needed: Vec<u16>,
     messages: (flume::Sender<(LocalPos,VoxelMsg<Vox>)>, flume::Receiver<(LocalPos,VoxelMsg<Vox>)>),
+    cw_pos: Pos,
 }
 
 impl<Vox> super::ChunkTrait<Vox> for Chunk<Vox> 
@@ -28,7 +29,7 @@ Vox: core_obj::Voxel + Send + Sync,
     }
 
 
-    fn new() -> Self {
+    fn new(cw_pos: Pos) -> Self {
         prelude::lazy_static! {
             static ref ALL_POS: Vec<Pos> = {
                 let size = CHUNK_SIZE as i32;
@@ -53,13 +54,25 @@ Vox: core_obj::Voxel + Send + Sync,
             contains_attr: Vec::new(),
             messages: flume::unbounded(),
             visitors_needed: Vec::new(),
+            cw_pos,
         }
     }
 
-    fn read_phase<'a, V>(&self, registry: &V) 
+    fn read_phase<'a, V>(&self, registry: &V, map: &crate::Map<Vox>) 
     where V: VisitorRegistry<'a, Vox,crate::Map<Vox>> 
     {
-        todo!()
+        registry.get_read(self.visitors_needed.as_slice())
+            .for_each(|visitor|{
+                for plane in &self.voxels{
+                    for row in plane{
+                        for vox in row{
+                            if let Some(vox) = vox{
+                                visitor.visit(self.cw_pos, vox, map);
+                            }
+                        }
+                    }
+                }
+            })
     }
 
     fn respond_phase<'a, V>(&mut self, registry: &V) 

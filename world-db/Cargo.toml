@@ -12,6 +12,6 @@ world-protocol = {path = "../world-protocol"}
 core-obj = { path = "../core-obj"}
 rayon = "1.8.0"
 flume = "0.11.0"
-spatialtree = "0.1.1"
 itertools = "0.11.0"
 vector3d = "0.2.1"
+kdtree = "0.7.0"
