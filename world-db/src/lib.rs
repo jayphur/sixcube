@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use core_obj::{Pos, Voxel};
+use core_obj::{Pos, Voxel, Runtime};
 use kdtree::KdTree;
 use world_protocol::{message::VoxelMsg, VisitorRead, VisitorRespond, VisitorApply, VisitorRegistry};
 use rayon::{prelude::{IntoParallelRefIterator, ParallelIterator, IntoParallelIterator}, iter::ParallelBridge};
@@ -8,9 +8,7 @@ use chunk::Chunk;
 
 mod chunk;
 
-
 // Tree tree tree tree tree!!!!!
-
 //Smallest chunk 32^3
 //nah maybe 8^3
 
@@ -20,45 +18,43 @@ const CHUNK_SIZE: usize = 16;
 const CHUNK_SIZE_I32: i32 = 16;
 
 #[derive(Debug)]
-pub struct Map<Vox> 
+pub struct Map<R> 
 where 
-Vox: core_obj::Voxel + Send + Sync, 
+R: Runtime, 
 {
-    _marker: PhantomData<Vox>
+    _marker: PhantomData<R>
 }
-impl<Vox> world_protocol::Map<Vox> for Map<Vox> 
+impl<R> world_protocol::Map<R> for Map<R> 
 where 
-Vox: core_obj::Voxel + Send + Sync, 
+R: Runtime, 
 {
-    fn get_type(&self, pos: Pos) -> Option<Vox::Type> {
+    fn get_type(&self, pos: Pos) -> Option<R::VoxelType> {
         todo!()
     }
 
-    fn msg_voxel(&self, pos: Pos, msg: VoxelMsg<Vox>) {
+    fn msg_voxel(&self, pos: Pos, msg: VoxelMsg<R>) {
         todo!()
-
     }
 
     fn load(&mut self, pos: &[Pos]) {
         todo!()
     }
 
-    fn read_phase<'v, V>(&mut self, registry: &V) where V: VisitorRegistry<'v, Vox, Self>{
+    fn read_phase<'v, V>(&mut self, registry: &V) where V: VisitorRegistry<'v, R, Self>{
         todo!()
     }
 
-    fn respond_phase<'v, V>(&mut self, registry: &V) where V: VisitorRegistry<'v, Vox, Self> {
+    fn respond_phase<'v, V>(&mut self, registry: &V) where V: VisitorRegistry<'v, R, Self> {
         todo!()
     }
 
-    fn apply_phase<'v, V>(&mut self, registry: &V) where V: VisitorRegistry<'v, Vox, Self> {
+    fn apply_phase<'v, V>(&mut self, registry: &V) where V: VisitorRegistry<'v, R, Self> {
         todo!()
     }
 }
-
-impl<Vox> Default for Map<Vox>
+impl<R> Default for Map<R> 
 where 
-Vox: core_obj::Voxel + Send + Sync, 
+R: Runtime, 
 {
     fn default() -> Self {
         Self {
@@ -67,19 +63,19 @@ Vox: core_obj::Voxel + Send + Sync,
     }
 }
 //DEPENDENCY INVERSION
-pub trait ChunkTrait<Vox> 
+pub trait ChunkTrait<R> 
 where 
-Vox: core_obj::Voxel + Send + Sync, 
+R: Runtime, 
 {
-    fn get_type(&self, pos: LocalPos) -> Option<Vox::Type>;
+    fn get_type(&self, pos: LocalPos) -> Option<R::VoxelType>;
 
-    fn tell(&self, pos: LocalPos, msg: VoxelMsg<Vox>);
+    fn tell(&self, pos: LocalPos, msg: VoxelMsg<R>);
 
-    fn read_phase<'a, V>(&self, registry: &V, map: &Map<Vox>) where V: VisitorRegistry<'a, Vox,Map<Vox>>;
+    fn read_phase<'a, V>(&self, registry: &V, map: &Map<R>) where V: VisitorRegistry<'a, R,Map<R>>;
 
-    fn respond_phase<'a, V>(&mut self, registry: &V) where V: VisitorRegistry<'a, Vox,Map<Vox>>;
+    fn respond_phase<'a, V>(&mut self, registry: &V) where V: VisitorRegistry<'a, R,Map<R>>;
 
-    fn apply_phase<'a, V>(&mut self, registry: &V) where V: VisitorRegistry<'a, Vox,Map<Vox>>;
+    fn apply_phase<'a, V>(&mut self, registry: &V) where V: VisitorRegistry<'a, R,Map<R>>;
 
     fn new(cw_pos: Pos) -> Self;
 }

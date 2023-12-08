@@ -9,3 +9,4 @@ edition = "2021"
 prelude = {path = "../prelude"}
 core-obj = {path = "../core-obj"}
 oneshot = "0.1.6"
+teloc = "0.2.0"
