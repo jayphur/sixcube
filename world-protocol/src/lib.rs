@@ -38,21 +38,12 @@ where
     fn msg_voxel(&self, pos: Pos, msg: VoxelMsg<R>);
     fn load(&mut self, pos: &[Pos]);
 
-    /// Iter LOADED chunks and each can send messages.
-    /// Cannot mutate, can only send messages and look at data.
-    fn read_phase<'v, V>(&mut self, registry: &V) where V: VisitorRegistry<'v, R, Self>;
-
-    /// Iter LOADED chunks and each can respond to messages.
-    /// Cannot mutate chunk data (only respond), isolated to chunk and its msg queue.
-    fn respond_phase<'v, V>(&mut self, registry: &V) where V: VisitorRegistry<'v, R, Self>;
-
-
     /// Iter LOADED chunks.
     /// Isolated to chunk and will drain it's message queue and mutate itself.
-    fn apply_phase<'v, V>(&mut self, registry: &V) where V: VisitorRegistry<'v, R, Self>;
+    fn update<'v, V>(&mut self, registry: &V) where V: VisitorRegistry<'v, R, Self>;
 }
 
-pub trait VisitorRead<R, M> 
+pub trait Visitor<R, M> 
 where R: Runtime, M: Map<R> 
 {
     fn predicate<'a>(&'a self) -> VisitingPredicate<'a,R>;
@@ -60,41 +51,15 @@ where R: Runtime, M: Map<R>
     fn visit(&self, pos: Pos, vox: &Voxel<R>, map: &M);
 }
 
-pub trait VisitorRespond<R, M> 
-where R: Runtime, M: Map<R> 
-{
-    fn predicate<'a>(&'a self) -> VisitingPredicate<'a,R>;
-
-    fn visit<'a, I> (&'a self, pos: Pos, vox: &Voxel<R>, messages: I) 
-    where R: 'a, I: Iterator<Item = &'a mut VoxelMsg<R>>;
-}
-
-pub trait VisitorApply<R, M> 
-where R: Runtime, M: Map<R> 
-{
-    fn predicate<'a>(&'a self) -> VisitingPredicate<'a,R>;
-
-    fn visit<'a, I> (&'a self, pos: Pos, vox: &mut Voxel<R>, messages: I) 
-    where R: 'a, I: Iterator<Item = &'a mut VoxelMsg<R>>{}
-}
-
 pub trait VisitorRegistry<'i, R, M>: Sized + Send + Sync
 where
 R: Runtime,
 M: Map<R>
 {
-    type ReadList<'a>: Iterator<Item=Self::Read>;
-    type Read: VisitorRead<R, M>;
+    type VisitorList<'a>: Iterator<Item=Self::Visitor>;
+    type Visitor: Visitor<R, M>;
 
-    type RespondList<'a>: Iterator<Item=Self::Respond>;
-    type Respond: VisitorRespond<R, M>;
-
-    type ApplyList<'a>: Iterator<Item=Self::Apply>;
-    type Apply: VisitorApply<R, M>;
-
-    fn get_read<'b>(&self, ids: &[u16])    -> Self::ReadList<'b>;
-    fn get_respond<'b>(&self, ids: &[u16]) -> Self::RespondList<'b>;
-    fn get_apply<'b>(&self, ids: &[u16])   -> Self::ApplyList<'b>;
+    fn get_visitor<'b>(&self, ids: &[u16])    -> Self::VisitorList<'b>;
 
     fn make_list<'a>(&self, info: Predicates<'a, R>) -> &'i [u16];
 

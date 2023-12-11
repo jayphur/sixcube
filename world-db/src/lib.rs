@@ -1,10 +1,7 @@
-use std::marker::PhantomData;
-
-use core_obj::{Pos, Voxel, Runtime};
-use kdtree::KdTree;
-use world_protocol::{message::VoxelMsg, VisitorRead, VisitorRespond, VisitorApply, VisitorRegistry};
-use rayon::{prelude::{IntoParallelRefIterator, ParallelIterator, IntoParallelIterator}, iter::ParallelBridge};
-use chunk::Chunk;
+use core_obj::{Pos, Runtime};
+use rustc_hash::FxHashMap;
+use world_protocol::{message::VoxelMsg, VisitorRegistry};
+use chunk::{Chunk, ChunkData};
 
 mod chunk;
 
@@ -12,17 +9,15 @@ mod chunk;
 //Smallest chunk 32^3
 //nah maybe 8^3
 
-type LocalPos = vector3d::Vector3d<usize>;
-
-const CHUNK_SIZE: usize = 16;
-const CHUNK_SIZE_I32: i32 = 16;
+const CHUNK_SIZE: usize = 32;
+const CHUNK_SIZE_I32: i32 = 32;
 
 #[derive(Debug)]
 pub struct Map<R> 
 where 
 R: Runtime, 
 {
-    _marker: PhantomData<R>
+    active_chunks: FxHashMap<Pos16, ChunkData<R>>
 }
 impl<R> world_protocol::Map<R> for Map<R> 
 where 
@@ -40,15 +35,7 @@ R: Runtime,
         todo!()
     }
 
-    fn read_phase<'v, V>(&mut self, registry: &V) where V: VisitorRegistry<'v, R, Self>{
-        todo!()
-    }
-
-    fn respond_phase<'v, V>(&mut self, registry: &V) where V: VisitorRegistry<'v, R, Self> {
-        todo!()
-    }
-
-    fn apply_phase<'v, V>(&mut self, registry: &V) where V: VisitorRegistry<'v, R, Self> {
+    fn update<'v, V>(&mut self, registry: &V) where V: VisitorRegistry<'v, R, Self> {
         todo!()
     }
 }
@@ -57,25 +44,11 @@ where
 R: Runtime, 
 {
     fn default() -> Self {
-        Self {
-            _marker: PhantomData,
-        }
+        todo!()
     }
 }
-//DEPENDENCY INVERSION
-pub trait ChunkTrait<R> 
-where 
-R: Runtime, 
-{
-    fn get_type(&self, pos: LocalPos) -> Option<R::VoxelType>;
 
-    fn tell(&self, pos: LocalPos, msg: VoxelMsg<R>);
 
-    fn read_phase<'a, V>(&self, registry: &V, map: &Map<R>) where V: VisitorRegistry<'a, R,Map<R>>;
-
-    fn respond_phase<'a, V>(&mut self, registry: &V) where V: VisitorRegistry<'a, R,Map<R>>;
-
-    fn apply_phase<'a, V>(&mut self, registry: &V) where V: VisitorRegistry<'a, R,Map<R>>;
-
-    fn new(cw_pos: Pos) -> Self;
-}
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub(crate) struct Pos16(pub i16,pub i16,pub i16); 
+pub struct LocalPos(pub u8,pub u8,pub u8);
