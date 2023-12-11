@@ -29,90 +29,49 @@ use prelude::*;
 
 pub mod message;
 
-pub trait Map<Vox>
+pub trait Map<R>
 where
-    Vox: Voxel,
+    R: Runtime,
     Self: Sized,
 {    
-    fn get_type(&self, pos: Pos) -> Option<Vox::Type>;
-    fn msg_voxel(&self, pos: Pos, msg: VoxelMsg<Vox>);
+    fn get_type(&self, pos: Pos) -> Option<R::VoxelType>;
+    fn msg_voxel(&self, pos: Pos, msg: VoxelMsg<R>);
     fn load(&mut self, pos: &[Pos]);
-
-    /// Iter LOADED chunks and each can send messages.
-    /// Cannot mutate, can only send messages and look at data.
-    fn read_phase<'v, V>(&self, registry: &V) where V: VisitorRegistry<'v, Vox, Self>;
-
-    /// Iter LOADED chunks and each can respond to messages.
-    /// Cannot mutate chunk data (only respond), isolated to chunk and its msg queue.
-    fn respond_phase<'v, V>(&mut self, registry: &V) where V: VisitorRegistry<'v, Vox, Self>;
-
 
     /// Iter LOADED chunks.
     /// Isolated to chunk and will drain it's message queue and mutate itself.
-    fn apply_phase<'v, V>(&mut self, registry: &V) where V: VisitorRegistry<'v, Vox, Self>;
-}
-#[derive(Debug)]
-pub enum BoundsResult<T>{
-    Ok(T),
-    OutOfBounds,
+    fn update<'v, V>(&mut self, registry: &V) where V: VisitorRegistry<'v, R, Self>;
 }
 
-
-pub trait VisitorRead<Vox, M> 
-where Vox: Voxel, M: Map<Vox> 
+pub trait Visitor<R, M> 
+where R: Runtime, M: Map<R> 
 {
-    fn predicate<'a>(&'a self) -> VisitingPredicate<'a,Vox>;
+    fn predicate<'a>(&'a self) -> VisitingPredicate<'a,R>;
 
-    fn visit(&self, pos: Pos, vox: &Vox, map: &M);
+    fn visit(&self, pos: Pos, vox: &Voxel<R>, map: &M);
 }
 
-pub trait VisitorRespond<Vox, M> 
-where Vox: Voxel, M: Map<Vox> 
-{
-    fn predicate<'a>(&'a self) -> VisitingPredicate<'a,Vox>;
-
-    fn visit<'a, I> (&'a self, pos: Pos, vox: &Vox, messages: I) 
-    where Vox: 'a, I: Iterator<Item = &'a mut VoxelMsg<Vox>>;
-}
-
-pub trait VisitorApply<Vox, M> 
-where Vox: Voxel, M: Map<Vox> 
-{
-    fn predicate<'a>(&'a self) -> VisitingPredicate<'a,Vox>;
-
-    fn visit<'a, I> (&'a self, pos: Pos, vox: &mut Vox, messages: I) 
-    where Vox: 'a, I: Iterator<Item = &'a mut VoxelMsg<Vox>>{}
-}
-
-pub trait VisitorRegistry<'i, Vox, M>: Sized 
+pub trait VisitorRegistry<'i, R, M>: Sized + Send + Sync
 where
-Vox: Voxel,
-M: Map<Vox>
+R: Runtime,
+M: Map<R>
 {
-    type ReadList<'a>: Iterator<Item=Self::Read>;
-    type Read: VisitorRead<Vox, M>;
+    type VisitorList<'a>: Iterator<Item=Self::Visitor>;
+    type Visitor: Visitor<R, M>;
 
-    type RespondList<'a>: Iterator<Item=Self::Respond>;
-    type Respond: VisitorRespond<Vox, M>;
+    fn get_visitor<'b>(&self, ids: &[u16])    -> Self::VisitorList<'b>;
 
-    type ApplyList<'a>: Iterator<Item=Self::Apply>;
-    type Apply: VisitorApply<Vox, M>;
-
-    fn get_read<'b>(&self, ids: &[u16])    -> Self::ReadList<'b>;
-    fn get_respond<'b>(&self, ids: &[u16]) -> Self::RespondList<'b>;
-    fn get_apply<'b>(&self, ids: &[u16])   -> Self::ApplyList<'b>;
-
-    fn make_list<'a>(&self, info: Info<'a, Vox>) -> &'i [u16];
+    fn make_list<'a>(&self, info: Predicates<'a, R>) -> &'i [u16];
 
     //TODO: methods for adding visitors?? ACTUALLY, maybe not, that might not be of concern for this layer...
 }
 
 #[derive(Default, Debug, Clone)]
-pub struct Info<'a, Vox: Voxel>{ //FIXME: maybe get a better name here??
-    pub contains_attr: Option<&'a Vec<Vox::AttrType>>,
+pub struct Predicates<'a, R: Runtime>{
+    pub contains_voxels: Option<&'a Vec<R::VoxelType>>,
 }
 
 #[derive(Debug)]
-pub struct VisitingPredicate<'a, Vox: Voxel>{
-    attr: &'a [Vox::AttrType],
+pub struct VisitingPredicate<'a, R: Runtime>{
+    attr: &'a [R::AttrType],
 }
