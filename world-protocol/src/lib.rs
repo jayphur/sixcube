@@ -21,13 +21,10 @@
 
 //Note: we're trying to avoid that dreaded &dyn. it's stinky, silly, annoying, and hard to work with. 
 
-#![feature(return_position_impl_trait_in_trait)]
+use std::marker::PhantomData;
 
 use core_obj::*;
-use message::VoxelMsg;
 use prelude::*;
-
-pub mod message;
 
 pub trait Map<R>
 where
@@ -35,7 +32,6 @@ where
     Self: Sized,
 {    
     fn get_type(&self, pos: Pos) -> Option<R::VoxelType>;
-    fn msg_voxel(&self, pos: Pos, msg: VoxelMsg<R>);
     fn load(&mut self, pos: &[Pos]);
 
     /// Iter LOADED chunks.
@@ -47,8 +43,13 @@ pub trait Visitor<R, M>
 where R: Runtime, M: Map<R> 
 {
     fn predicate<'a>(&'a self) -> VisitingPredicate<'a,R>;
-
-    fn visit(&self, pos: Pos, vox: &Voxel<R>, map: &M);
+    fn visit<'a, GetAttr,GetType>(&self, pos: Pos, vox: VoxelMut<'a, R>, get_attr: GetAttr, get_type: GetType)
+    where
+    GetAttr: Fn(Pos) -> Option<core_obj::Value>,
+    GetType: Fn(Pos) -> Option<R::VoxelType>;
+}
+pub struct VoxelMut<'a, R: Runtime>{
+    pub my_type: &'a mut R::VoxelType,
 }
 
 pub trait VisitorRegistry<'i, R, M>: Sized + Send + Sync

@@ -42,3 +42,9 @@ pub enum Value{
 
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Pos(pub i32,pub i32,pub i32);
+impl Pos{
+    #[inline]
+    pub fn from_usize(from: (usize,usize,usize)) -> Self{
+        Self(from.0 as i32,from.1 as i32,from.2 as i32)
+    }
+}

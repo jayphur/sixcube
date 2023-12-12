@@ -1,6 +1,7 @@
 use core_obj::{Pos, Runtime};
+use rayon::iter::{ParallelBridge, ParallelIterator};
 use rustc_hash::FxHashMap;
-use world_protocol::{message::VoxelMsg, VisitorRegistry};
+use world_protocol::{VisitorRegistry};
 use chunk::{Chunk, ChunkData};
 
 mod chunk;
@@ -17,7 +18,7 @@ pub struct Map<R>
 where 
 R: Runtime, 
 {
-    active_chunks: FxHashMap<Pos16, ChunkData<R>>
+    active_chunks: FxHashMap<Pos16, Chunk<R>>
 }
 impl<R> world_protocol::Map<R> for Map<R> 
 where 
@@ -27,16 +28,17 @@ R: Runtime,
         todo!()
     }
 
-    fn msg_voxel(&self, pos: Pos, msg: VoxelMsg<R>) {
-        todo!()
-    }
 
     fn load(&mut self, pos: &[Pos]) {
         todo!()
     }
 
     fn update<'v, V>(&mut self, registry: &V) where V: VisitorRegistry<'v, R, Self> {
-        todo!()
+        //FIXME: par_bridge?? maybe swap out FxHashMap for one with Rayon support
+        self.active_chunks.iter().par_bridge().for_each(|(cw_pos,chunk)|{
+            let write = chunk.data.write();
+            chunk.update(registry, write, self);
+        })
     }
 }
 impl<R> Default for Map<R> 

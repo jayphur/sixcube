@@ -8,6 +8,4 @@ members = [
     "runtime",
 ]
 edition = "2021"
-workspace.resolver = "2"
-balls = "23" #huh
-
+workspace.resolver = "1"
