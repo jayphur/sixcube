@@ -21,35 +21,51 @@
 
 //Note: we're trying to avoid that dreaded &dyn. it's stinky, silly, annoying, and hard to work with. 
 
-use std::marker::PhantomData;
+use std::path::Path;
 
+use async_trait::async_trait;
 use core_obj::*;
 use prelude::*;
 
+#[async_trait]
 pub trait Map<R>
 where
     R: Runtime,
     Self: Sized,
 {    
-    fn get_type(&self, pos: Pos) -> Option<R::VoxelType>;
-    fn load(&mut self, pos: &[Pos]);
+    type UpdateListener: UpdateListener<R>;
+    fn new_listener(&self) -> Self::UpdateListener;
+    ///Read/write to existing file/make a new one
+    async fn init(path: &Path, runtime: &R) -> Result<Self>;
+    async fn get_type(&self, pos: Pos, runtime: &R) -> Option<R::VoxelType>;
 
     /// Iter LOADED chunks.
     /// Isolated to chunk and will drain it's message queue and mutate itself.
-    fn update<'v, V>(&mut self, registry: &V) where V: VisitorRegistry<'v, R, Self>;
+    async fn update<'v, V>(&mut self, registry: &V, runtime: &R) where V: VisitorRegistry<'v, R, Self>;
+}
+
+#[async_trait]
+pub trait UpdateListener<R: Runtime>{
+    async fn rx_async(&mut self) -> Result<Update<R>>;
+    fn try_rx(&mut self) -> Result<Option<Update<R>>>;
+    fn rx_blocking(&mut self) -> Result<Update<R>>;
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Update<R: Runtime>{
+    pub pos: Pos,
+    pub voxel_type: R::VoxelType,
 }
 
 pub trait Visitor<R, M> 
 where R: Runtime, M: Map<R> 
 {
     fn predicate<'a>(&'a self) -> VisitingPredicate<'a,R>;
-    fn visit<'a, GetAttr,GetType>(&self, pos: Pos, vox: VoxelMut<'a, R>, get_attr: GetAttr, get_type: GetType)
-    where
-    GetAttr: Fn(Pos) -> Option<core_obj::Value>,
-    GetType: Fn(Pos) -> Option<R::VoxelType>;
+    fn visit<'a, V: VoxelMut<'a, R>>(&self, pos: Pos, voxel_mut: V);
 }
-pub struct VoxelMut<'a, R: Runtime>{
-    pub my_type: &'a mut R::VoxelType,
+pub trait VoxelMut<'a, R: Runtime>{
+    fn get_my_type(&self) -> &R::VoxelType;
+    fn set_my_type(&mut self, val: R::VoxelType);
 }
 
 pub trait VisitorRegistry<'i, R, M>: Sized + Send + Sync

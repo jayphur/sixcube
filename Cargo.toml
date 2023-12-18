@@ -1,6 +1,5 @@
 [workspace]
 members = [
-    "plugin/*",
     "prelude",
     "core-obj",
     "world-protocol",

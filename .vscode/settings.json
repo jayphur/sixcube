@@ -1,11 +1,14 @@
 {
     "cSpell.words": [
+        "bson",
         "fxhash",
         "immut",
         "Octree",
         "recarr",
+        "ringbuf",
         "rstest",
         "spatialtree",
+        "tempfile",
         "Unindexed"
     ],
     "rust-analyzer.showUnlinkedFileNotification": false

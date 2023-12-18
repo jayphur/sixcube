@@ -1,15 +1,23 @@
-use std::marker::PhantomData;
+use std::{marker::PhantomData, ops::Add};
+use serde::{Serialize, Deserialize};
 use prelude::*;
 
-// He who creates 'i
-pub trait Runtime: Sized{
-    type VoxelType: Send + Sync + Debug + Clone;
+pub trait Runtime: Sized + Debug + Clone + Send + Sync{
+    type VoxelType: Send + Sync + Debug + Clone + Copy + Serialize + for<'a> Deserialize<'a> + PartialEq;
     fn get_voxels(&self) -> &[Self::VoxelType];
     fn voxel_default(&self, r#type: &Self::VoxelType) -> &Voxel<Self>;
+    fn voxel_info(&self, r#type: &Self::VoxelType) -> &TypeInfo;
 
-    type AttrType: Send + Sync + Debug + Clone;
+    type AttrType: Send + Sync + Debug + Clone + Copy + Serialize + for <'a> Deserialize<'a> + PartialEq;
     fn get_attr(&self) -> &[Self::AttrType];
     fn attr_default(&self, r#type: &Self::AttrType) -> &Attr<Self>;
+    fn attr_info(&self, r#type: &Self::AttrType) -> &TypeInfo;
+}
+
+#[derive(Debug)]
+pub struct TypeInfo{
+    pub name: String,
+    pub plugin: String,
 }
 
 #[derive(Debug)]
