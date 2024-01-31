@@ -4,8 +4,8 @@ use prelude::*;
 use core_obj::{Runtime, Voxel, Pos};
 use serde::Serialize;
 use tokio::fs::{File, self};
-
-use crate::{chunk::{Chunk, Arr3d}, Pos16, CHUNK_SIZE, LocalPos};
+use world_protocol::pos::ChunkPos;
+use crate::{arr3d::{Arr3d}, CHUNK_SIZE};
 
 pub struct MapFile<R: Runtime>{
     pub(crate) path: Arc<Path>,    
@@ -19,12 +19,6 @@ impl<R: Runtime> MapFile<R>{
             path,
             __marker: PhantomData, 
         })
-    }
-    pub async fn read_chunk(&self, cw_pos: Pos16) -> Result<Option<Chunk<R>>>{
-        todo!()
-    }
-    pub async fn write_map(&self, map: &crate::Map<R>) -> Result<()>{
-        todo!()
     }
 }
 

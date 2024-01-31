@@ -24,71 +24,48 @@
 use std::path::Path;
 
 use async_trait::async_trait;
+use chunks::{ReadChunk, WriteChunk};
 use core_obj::*;
+use pos::ChunkPos;
 use prelude::*;
+
+pub mod chunks;
+pub mod pos;
+
+const CHUNK_SIZE: u8 = 32;
+const CHUNK_SIZE_I32: i32 = 32;
+const CHUNK_SIZE_I8: i8 = 32;
 
 #[async_trait]
 pub trait Map<R>
 where
     R: Runtime,
     Self: Sized,
-{    
-    type UpdateListener: UpdateListener<R>;
-    fn new_listener(&self) -> Self::UpdateListener;
-    ///Read/write to existing file/make a new one
+{  
+    ///Read/write to existing file or make a new one
     async fn init(path: &Path, runtime: &R) -> Result<Self>;
-    async fn get_type(&self, pos: Pos, runtime: &R) -> Option<R::VoxelType>;
+    async fn add_event(&self, alert: VoxEvent<R>) -> Result<Self>;
+    fn get_events(&self) -> &[VoxEvent<R>];
+    async fn clear_events(&mut self);
 
-    /// Iter LOADED chunks.
-    /// Isolated to chunk and will drain it's message queue and mutate itself.
-    async fn update<'v, V>(&mut self, registry: &V, runtime: &R) where V: VisitorRegistry<'v, R, Self>;
+    type ReadChunk<'a>: ReadChunk<R> where Self: 'a;
+    type WriteChunk<'a>: WriteChunk<R> where Self: 'a;
+
+    async fn write_chunk<'b>(&'b self, pos: ChunkPos) -> Option<Self::ReadChunk<'b>>;
+    async fn read_chunk<'b>(&'b mut self, pos: ChunkPos) -> Self::WriteChunk<'b>;
 }
 
-#[async_trait]
-pub trait UpdateListener<R: Runtime>{
-    async fn rx_async(&mut self) -> Result<Update<R>>;
-    fn try_rx(&mut self) -> Result<Option<Update<R>>>;
-    fn rx_blocking(&mut self) -> Result<Update<R>>;
-}
-
+/// A notification waking up a voxel.
 #[derive(Debug, Clone, Copy)]
-pub struct Update<R: Runtime>{
+pub struct VoxEvent<R: Runtime>{
     pub pos: Pos,
-    pub voxel_type: R::VoxelType,
+    pub vox_type: R::VoxelType,
+    pub event_type: EventType<R>
 }
-
-pub trait Visitor<R, M> 
-where R: Runtime, M: Map<R> 
-{
-    fn predicate<'a>(&'a self) -> VisitingPredicate<'a,R>;
-    fn visit<'a, V: VoxelMut<'a, R>>(&self, pos: Pos, voxel_mut: V);
-}
-pub trait VoxelMut<'a, R: Runtime>{
-    fn get_my_type(&self) -> &R::VoxelType;
-    fn set_my_type(&mut self, val: R::VoxelType);
-}
-
-pub trait VisitorRegistry<'i, R, M>: Sized + Send + Sync
-where
-R: Runtime,
-M: Map<R>
-{
-    type VisitorList<'a>: Iterator<Item=Self::Visitor>;
-    type Visitor: Visitor<R, M>;
-
-    fn get_visitor<'b>(&self, ids: &[u16])    -> Self::VisitorList<'b>;
-
-    fn make_list<'a>(&self, info: Predicates<'a, R>) -> &'i [u16];
-
-    //TODO: methods for adding visitors?? ACTUALLY, maybe not, that might not be of concern for this layer...
-}
-
-#[derive(Default, Debug, Clone)]
-pub struct Predicates<'a, R: Runtime>{
-    pub contains_voxels: Option<&'a Vec<R::VoxelType>>,
-}
-
-#[derive(Debug)]
-pub struct VisitingPredicate<'a, R: Runtime>{
-    attr: &'a [R::AttrType],
+#[derive(Debug, Clone, Copy)]
+pub enum EventType<R:Runtime>{
+    Type(R::VoxelType),
+    Neighbor,
+    Removed,
+    Inventory,
 }

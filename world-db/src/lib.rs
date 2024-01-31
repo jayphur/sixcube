@@ -5,12 +5,13 @@ use core_obj::{Pos, Runtime};
 use prelude::*;
 use rustc_hash::FxHashMap;
 use tokio::sync::{mpsc, broadcast};
-use world_protocol::{VisitorRegistry, Update};
-use chunk::{Chunk, ChunkData};
+use world_protocol::{pos::{ChunkLocalPos, ChunkPos}, VoxEvent};
 
-mod chunk;
+
+mod arr3d;
 mod disk;
-mod bg_tree;
+mod chunk;
+
 // Tree tree tree tree tree!!!!!
 //Smallest chunk 32^3
 //nah maybe 8^3
@@ -24,26 +25,35 @@ pub struct Map<R>
 where 
 R: Runtime, 
 {
-    active_chunks: FxHashMap<Pos16, Chunk<R>>,
-    //bg_chunks: bg_tree::BgTree<R::VoxelType>,
-    update_tx: broadcast::Sender<Update<R>>,
+    chunks: FxHashMap<ChunkPos, chunk::Chunk<R>>
 }
 #[async_trait]
 impl<R> world_protocol::Map<R> for Map<R> 
 where 
 R: Runtime + Sync + Send, 
 {
-    type UpdateListener = UpdateListener<R>;
+    ///Read/write to existing file or make a new one
     async fn init(path: &Path, runtime: &R) -> Result<Self>{
         todo!()
-    }
-    async fn get_type(&self, pos: Pos, runtime: &R) -> Option<R::VoxelType>{
+    }  
+    async fn add_event(&self, alert: VoxEvent<R>) -> Result<Self>{
+        todo!()
+    }  
+    fn get_events(&self) -> &[VoxEvent<R>]{
+        todo!()
+    }  
+    async fn clear_events(&mut self){
         todo!()
     }
-    async fn update<'v, V>(&mut self, registry: &V, runtime: &R) where V: VisitorRegistry<'v, R, Self>{
+
+    
+    type ReadChunk<'a> = chunk::ReadChunk<'a, R> where Self: 'a;
+    type WriteChunk<'a> = chunk::WriteChunk<'a, R> where Self: 'a;
+
+    async fn write_chunk<'b>(&'b self, pos: ChunkPos) -> Option<Self::ReadChunk<'b>>{
         todo!()
     }
-    fn new_listener(&self) -> Self::UpdateListener{
+    async fn read_chunk<'b>(&'b mut self, pos: ChunkPos) -> Self::WriteChunk<'b>{
         todo!()
     }
 }
@@ -56,45 +66,5 @@ R: Runtime,
     }
 }
 
-
-#[derive(Debug)]
-pub struct UpdateListener<R>
-where
-R: Runtime + Sync, 
-{
-    rx: broadcast::Receiver<Update<R>>,
-    __marker: PhantomData<R>
-}
-#[async_trait]
-impl<R: Runtime + Sync + Send> world_protocol::UpdateListener<R> for UpdateListener<R> {
-    
-    async fn rx_async(&mut self) -> Result<Update<R>>{
-        Ok(self.rx.recv().await?)
-    }
-    fn try_rx(&mut self) -> Result<Option<Update<R>>>{
-        Ok(Some(self.rx.try_recv()?))
-    }
-    fn rx_blocking(&mut self) -> Result<Update<R>>{
-        Ok(self.rx.blocking_recv()?)
-    }
-}
-
-
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
-pub(crate) struct Pos16(pub i16,pub i16,pub i16); 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
-pub struct LocalPos(pub u8,pub u8,pub u8);
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
-pub(crate) struct PosU(usize,usize,usize);
-
-impl From<(usize,usize,usize)> for PosU {
-    fn from(value: (usize,usize,usize)) -> Self {
-        Self(value.0,value.1,value.2)
-    }
-}
-
-
-/// Turn a global position into chunk wise + local 
-pub(crate) fn break_down(pos: Pos) -> (Pos16, LocalPos){
-    todo!()
-}
+#[derive(Clone, Copy, Default, Debug)]
+pub(crate) struct PosU(usize, usize, usize);
