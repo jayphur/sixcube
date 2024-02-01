@@ -1,11 +1,11 @@
-use std::{path::Path, marker::PhantomData, sync::Arc, io::Write, iter};
-use bson::Bson;
-use prelude::*;
-use core_obj::{Runtime, Voxel, Pos};
+use std::{io::Write, iter, marker::PhantomData, path::Path, sync::Arc};
+
 use serde::Serialize;
-use tokio::fs::{File, self};
-use world_protocol::pos::ChunkPos;
-use crate::{arr3d::{Arr3d}, CHUNK_SIZE};
+
+use core_obj::Runtime;
+use prelude::*;
+
+use crate::{arr3d::Arr3d, CHUNK_SIZE};
 
 pub struct MapFile<R: Runtime>{
     pub(crate) path: Arc<Path>,    

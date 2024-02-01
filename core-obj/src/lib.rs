@@ -1,5 +1,7 @@
-use std::{marker::PhantomData, ops::Add};
-use serde::{Serialize, Deserialize};
+use std::ops::Add;
+
+use serde::{Deserialize, Serialize};
+
 use prelude::*;
 
 pub trait Runtime: Sized + Debug + Clone + Send + Sync{
@@ -14,16 +16,17 @@ pub trait Runtime: Sized + Debug + Clone + Send + Sync{
     fn attr_default(&self, r#type: &Self::AttrType) -> Value;
     fn find_attr_by_name(&self, name: String) -> &Self::AttrType;
 
-}
-pub trait RuntimeType{
-    fn name(&self) -> &String;
+    /// DataContainers:
+    ///
+    /// How the data is formatted, aka the containers composition: Responsibility of the Runtime
+    ///
+    /// How the data is used: Responsibility of the plugin.
+    type DataContainer: Sync + Send + Clone + Default + Debug + for <'a> Deserialize<'a> + PartialEq;
 }
 
-pub trait Voxel<R: Runtime>{
-    fn read_type(&self) -> &R::VoxelType;
-    fn read_data(&self) -> (); //TODO: finish this signature
-    fn write_type(&mut self, val: R::VoxelType);
-    fn write_data(&mut self); //TODO: finish this signature
+/// A type, as part of the user defined plugin system
+pub trait RuntimeType{
+    fn name(&self) -> &String;
 }
 
 #[derive(Debug)]
@@ -36,14 +39,14 @@ impl<R: Runtime> Clone for Attr<R>{
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Value{
     Bool(bool),
     U16(u16),
     I16(i16),
 }
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
 pub struct Pos(pub i32,pub i32,pub i32);
 
 impl Add<Self> for Pos {
@@ -63,7 +66,7 @@ impl Pos{
 
 
 // maybe delete
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
 pub struct LocalPos(pub i8,pub i8,pub i8);
 impl LocalPos{
     #[inline]
@@ -71,4 +74,16 @@ impl LocalPos{
         Self(from.0 as i8,from.1 as i8,from.2 as i8)
     }
     
+}
+
+/// Data that a voxel, or dim, might store based on its functionality. (ie an inventory, values such as heat, energy, etc)
+#[derive(Clone, Debug, Default, PartialEq)]
+pub enum Data{
+    Inventory(Vec<()>), //TODO: Items instead of "()"
+    Pos(Pos),
+    LocalPos(LocalPos),
+    Value(i32),
+    List(Vec<Data>),
+    #[default]
+    None,
 }

@@ -2,7 +2,7 @@ use core_obj::Pos;
 
 use crate::CHUNK_SIZE_I32;
 
-#[derive(Debug, Default, Clone, Copy, Hash)]
+#[derive(Debug, Default, Clone, Copy, Hash, Eq, PartialEq)]
 pub struct ChunkPos(pub i16,pub i16,pub i16);
 
 impl ChunkPos {
@@ -11,7 +11,7 @@ impl ChunkPos {
     }
 }
 
-#[derive(Debug, Default, Clone, Copy, Hash)]
+#[derive(Debug, Default, Clone, Copy, Hash, Eq, PartialEq)]
 pub struct ChunkLocalPos(pub u8,pub u8,pub u8);
 
 impl ChunkLocalPos {
@@ -24,7 +24,7 @@ impl ChunkLocalPos {
 pub fn split(pos: Pos) -> (ChunkPos, ChunkLocalPos){
     (
         ChunkPos((pos.0 / CHUNK_SIZE_I32) as i16,(pos.1 / CHUNK_SIZE_I32) as i16,(pos.2 / CHUNK_SIZE_I32) as i16),
-        ChunkLocalPos((pos.0 % CHUNK_SIZE_I32) as i8, (pos.1 % CHUNK_SIZE_I32) as i8,(pos.2 % CHUNK_SIZE_I32) as i8)
+        ChunkLocalPos((pos.0 % CHUNK_SIZE_I32) as u8, (pos.1 % CHUNK_SIZE_I32) as u8,(pos.2 % CHUNK_SIZE_I32) as u8)
     )
 }
 
