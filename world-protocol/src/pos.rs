@@ -12,7 +12,7 @@ impl ChunkPos {
 }
 
 #[derive(Debug, Default, Clone, Copy, Hash)]
-pub struct ChunkLocalPos(pub i8,pub i8,pub i8);
+pub struct ChunkLocalPos(pub u8,pub u8,pub u8);
 
 impl ChunkLocalPos {
     fn pos(self, chunk: ChunkPos) -> Pos{

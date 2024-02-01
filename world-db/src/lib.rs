@@ -1,12 +1,13 @@
 #![feature(slice_flatten)]
-use std::{path::Path, io::BufWriter, marker::PhantomData, sync::Arc, mem::MaybeUninit};
-use async_trait::async_trait;
-use core_obj::{Pos, Runtime};
-use prelude::*;
-use rustc_hash::FxHashMap;
-use tokio::sync::{mpsc, broadcast};
-use world_protocol::{pos::{ChunkLocalPos, ChunkPos}, VoxEvent};
 
+use std::path::Path;
+
+use async_trait::async_trait;
+use rustc_hash::FxHashMap;
+
+use core_obj::Runtime;
+use prelude::*;
+use world_protocol::{pos::{ChunkLocalPos, ChunkPos}, VoxEvent};
 
 mod arr3d;
 mod disk;
@@ -68,3 +69,11 @@ R: Runtime,
 
 #[derive(Clone, Copy, Default, Debug)]
 pub(crate) struct PosU(usize, usize, usize);
+
+impl From<ChunkLocalPos> for PosU {
+    fn from(value: ChunkLocalPos) -> Self {
+        Self(value.0 as usize, value.1 as usize, value.2 as usize)
+    }
+}
+
+
