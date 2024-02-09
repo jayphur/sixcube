@@ -5,15 +5,16 @@ use serde::{Deserialize, Serialize};
 use prelude::*;
 
 pub trait Runtime: Sized + Debug + Clone + Send + Sync{
-
     type VoxelType: RuntimeType + Send + Sync + Debug + Clone + Copy + Serialize + for<'a> Deserialize<'a> + PartialEq;
-    fn get_voxels(&self) -> &[Self::VoxelType];
-    fn voxel_default(&self, r#type: &Self::VoxelType) -> (); //Something
+    fn all_voxels(&self) -> &[Self::VoxelType];
+    fn voxel_name(&self, voxel: &Self::VoxelType) -> Option<&String>;
+    fn voxel_default_data(&self, voxel: &Self::VoxelType) -> Option<&Self::DataContainer>;
     fn find_voxel_by_name(&self, name: String) -> &Self::VoxelType;
 
     type AttrType: RuntimeType + Send + Sync + Debug + Clone + Copy + Serialize + for <'a> Deserialize<'a> + PartialEq;
-    fn get_attr(&self) -> &[Self::AttrType];
-    fn attr_default(&self, r#type: &Self::AttrType) -> Value;
+    fn all_attr(&self) -> &[Self::AttrType];
+    fn attr_name(&self, attr: &Self::AttrType) -> Option<&String>;
+    fn attr_default(&self, attr: &Self::AttrType) -> Value;
     fn find_attr_by_name(&self, name: String) -> &Self::AttrType;
 
     /// DataContainers:
@@ -26,7 +27,6 @@ pub trait Runtime: Sized + Debug + Clone + Send + Sync{
 
 /// A type, as part of the user defined plugin system
 pub trait RuntimeType{
-    fn name(&self) -> &String;
 }
 
 #[derive(Debug)]
@@ -46,7 +46,7 @@ pub enum Value{
     I16(i16),
 }
 
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Pos(pub i32,pub i32,pub i32);
 
 impl Add<Self> for Pos {
@@ -66,7 +66,7 @@ impl Pos{
 
 
 // maybe delete
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Serialize, Deserialize)]
 pub struct LocalPos(pub i8,pub i8,pub i8);
 impl LocalPos{
     #[inline]
@@ -76,8 +76,8 @@ impl LocalPos{
     
 }
 
-/// Data that a voxel, or dim, might store based on its functionality. (ie an inventory, values such as heat, energy, etc)
-#[derive(Clone, Debug, Default, PartialEq)]
+/// Data that a voxel, or dim, might store based on its functionality. (ie an inventory, values such as heat, energy, etc.)
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub enum Data{
     Inventory(Vec<()>), //TODO: Items instead of "()"
     Pos(Pos),

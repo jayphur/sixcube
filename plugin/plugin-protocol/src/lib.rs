@@ -1,5 +1,6 @@
-use core_obj::{Value, Runtime};
-use prelude::*;
+use std::marker::PhantomData;
+
+use core_obj::{Runtime, Value};
 
 pub struct Plugin<>{
     pub pretty_name: String,
@@ -14,5 +15,5 @@ pub struct VoxelDef<>{
 }
 
 pub struct Host<R: Runtime>{
-    
+    temp: PhantomData<R>
 }

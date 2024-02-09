@@ -8,5 +8,5 @@ description = "Abstract Core Types."
 
 [dependencies]
 prelude = { path = "../prelude" }
-serde = "1.0.193"
+serde = { version = "1.0.193" , features = ["derive"]}
 vector3d = "0.2.1"

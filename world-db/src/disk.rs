@@ -31,10 +31,11 @@ pub struct Arr3dRLE<T> where T: Clone + Debug + Default + Serialize + PartialEq{
     key: Vec<(u8,T)>,
 }
 
+
 impl<T> From<Arr3d<T>> for Arr3dRLE<T>
 where T: Clone + Debug + Default + Serialize + PartialEq
 {
-    fn from(other: Arr3d<T>) -> Self {
+    fn from(other: Arr3d<T>) -> Self { //TODO: hacked garbage, but quarantined hacked garbage lmfao
         let mut key: Vec<(u8,T)> = Vec::with_capacity(2);
         let flat = other.0
             .flatten()
@@ -107,7 +108,7 @@ mod test{
     use super::{Arr3d, Arr3dRLE};
 
     #[test]
-    fn there_and_back(){
+    fn round_trip_rle_arr3d(){
         let mut starting: Arr3d<i32> = Arr3d::default();
         *starting.get_mut(PosU(15, 2, 13)) = 23;
         *starting.get_mut(PosU(0, 4, 13)) = -324;

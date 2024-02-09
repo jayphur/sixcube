@@ -22,8 +22,10 @@
 //Note: we're trying to avoid that dreaded &dyn. it's stinky, silly, annoying, and hard to work with. 
 
 use std::path::Path;
+use std::sync::mpsc;
 
 use async_trait::async_trait;
+
 use chunks::{ReadChunk, WriteChunk};
 use core_obj::*;
 use pos::ChunkPos;
@@ -43,16 +45,15 @@ where
     Self: Sized,
 {  
     ///Read/write to existing file or make a new one
-    async fn init(path: &Path, runtime: &R) -> Result<Self>;
-    async fn add_event(&self, alert: VoxEvent<R>) -> Result<Self>;
-    fn get_events(&self) -> &[VoxEvent<R>];
-    async fn clear_events(&mut self);
+    async fn init(path: &Path, runtime: &R) -> Result<(Self, mpsc::Receiver<VoxEvent<R>>)>;
+    async fn add_event(&self, alert: VoxEvent<R>) -> Result<()>;
 
     type ReadChunk<'a>: ReadChunk<R> where Self: 'a;
     type WriteChunk<'a>: WriteChunk<R> where Self: 'a;
 
-    async fn write_chunk<'b>(&'b self, pos: ChunkPos) -> Option<Self::ReadChunk<'b>>;
-    async fn read_chunk<'b>(&'b mut self, pos: ChunkPos) -> Self::WriteChunk<'b>;
+    async fn read_chunk<'b>(&'b self, pos: ChunkPos) -> Option<Self::ReadChunk<'b>>;
+    async fn write_chunk<'b>(&'b mut self, pos: ChunkPos) -> Option<Self::WriteChunk<'b>>;
+    fn init_chunk(&mut self, pos: ChunkPos);
 }
 
 /// A notification waking up a voxel.

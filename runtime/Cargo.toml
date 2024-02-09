@@ -12,3 +12,4 @@ prelude = {path = "../prelude"}
 core-obj = {path = "../core-obj"}
 oneshot = "0.1.6"
 fxhash = "0.2.1"
+serde = { version = "1.0.193", features = ["derive"] }

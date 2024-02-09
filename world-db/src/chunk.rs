@@ -5,22 +5,28 @@ use tokio::sync;
 use core_obj::Runtime;
 use world_protocol::chunks::ReadChunk as ReadChunkTrait;
 use world_protocol::chunks::WriteChunk as WriteChunkTrait;
-use world_protocol::pos::ChunkLocalPos;
+use world_protocol::pos::{ChunkLocalPos, ChunkPos};
 
 use crate::arr3d::Arr3d;
 
+//TODO: special solid and empty variants (NOTE: enum's are as large as their largest variant, don't use just an enum)
 #[derive(Debug)]
 pub struct Chunk<R: Runtime>{
     lock: RwLock<ChunkData<R>>,
 }
 
 impl<R: Runtime> Chunk<R> {
-    pub async fn read<'a>(&'a self) -> ReadChunk<'a, R>{
+    pub fn new() -> Self{
+        Self{
+            lock: RwLock::new(ChunkData::default())
+        }
+    }
+    pub async fn read<'a>(&'a self, c_pos: ChunkPos) -> ReadChunk<'a, R>{
         ReadChunk{
             guard: self.lock.read().await,
         }
     }
-    pub async fn write<'a>(&'a self) -> WriteChunk<'a, R>{
+    pub async fn write<'a>(&'a self, c_pos: ChunkPos) -> WriteChunk<'a, R>{
         WriteChunk{
             guard: self.lock.write().await,
         }
@@ -31,6 +37,15 @@ impl<R: Runtime> Chunk<R> {
 struct ChunkData<R: Runtime>{
     voxels: Arr3d<Option<R::VoxelType>>,
     voxel_data: FxHashMap<ChunkLocalPos, R::DataContainer>
+}
+
+impl<R: Runtime> Default for ChunkData<R> {
+    fn default() -> Self {
+        Self{
+            voxels: Default::default(),
+            voxel_data: Default::default(),
+        }
+    }
 }
 
 impl<R: Runtime> ChunkData<R> {
