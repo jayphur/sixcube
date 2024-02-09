@@ -8,7 +8,7 @@ if you have any name ideas, condsider a pull request to `name_ideas`. (currently
 
 plugins (aka mods) via self contained packages. Safety over capabilities. If you want the API to do something, you're welcome to make a pull request :D (?)
 
-plugins written in python or maybe rust too. Current thinking is to compile down to C and dynamically link (?)
+plugins written in python or maybe rust too. Current thinking is to use WASM with [exitsm](extism.org)(?)
 
 cubic chunk system for endless and expansive maps (?)
 
