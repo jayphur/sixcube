@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use core_obj::{Runtime, Value};
+use core_obj::{Registrar, Value};
 
 pub struct Plugin<>{
     pub pretty_name: String,
@@ -14,6 +14,6 @@ pub struct VoxelDef<>{
     pub react_fn: Option<()>, //TODO
 }
 
-pub struct Host<R: Runtime>{
+pub struct Host<R: Registrar>{
     temp: PhantomData<R>
 }

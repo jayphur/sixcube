@@ -11,7 +11,7 @@ mod attr;
 mod data;
 
 #[derive(Debug, Clone)]
-pub struct Runtime{
+pub struct Registrar {
 	all_voxel: Vec<VoxelType>,
 	voxel: FxHashMap<VoxelType, VoxelInfo>,
 
@@ -19,7 +19,7 @@ pub struct Runtime{
 	attr: FxHashMap<AttrType, AttrInfo>,
 }
 
-impl Runtime {
+impl Registrar {
 	pub fn new() -> Self{
 		let voxel: FxHashMap<VoxelType, VoxelInfo> = FxHashMap::default();
 		let attr: FxHashMap<AttrType, AttrInfo> = FxHashMap::default();
@@ -33,7 +33,7 @@ impl Runtime {
 	}
 }
 
-impl core_obj::Runtime for Runtime{
+impl core_obj::Registrar for Registrar {
 	type VoxelType = VoxelType;
 
 	fn all_voxels(&self) -> &[VoxelType] {

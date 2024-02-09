@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use rustc_hash::FxHashMap;
 use tokio::sync::mpsc;
 
-use core_obj::Runtime;
+use core_obj::Registrar;
 use prelude::*;
 use world_protocol::{pos::{ChunkLocalPos, ChunkPos}, VoxEvent};
 
@@ -26,7 +26,7 @@ const CHUNK_SIZE_I32: i32 = 16;
 #[derive(Debug)]
 pub struct Map<R> 
 where 
-R: Runtime, 
+R: Registrar,
 {
     chunks: FxHashMap<ChunkPos, chunk::Chunk<R>>,
     events: mpsc::Sender<VoxEvent<R>>,
@@ -34,7 +34,7 @@ R: Runtime,
 #[async_trait]
 impl<R> world_protocol::Map<R> for Map<R> 
 where 
-R: Runtime + Sync + Send + 'static,
+R: Registrar + Sync + Send + 'static,
 {
     ///Read/write to existing file or make a new one
     async fn init(path: &Path, runtime: &R) -> Result<(Self, std::sync::mpsc::Receiver<VoxEvent<R>>)>{
@@ -61,7 +61,7 @@ R: Runtime + Sync + Send + 'static,
 }
 impl<R> Default for Map<R> 
 where 
-R: Runtime, 
+R: Registrar,
 {
     fn default() -> Self {
         todo!()

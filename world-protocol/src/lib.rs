@@ -41,7 +41,7 @@ const CHUNK_SIZE_I8: i8 = 32;
 #[async_trait]
 pub trait Map<R>
 where
-    R: Runtime,
+    R: Registrar,
     Self: Sized,
 {  
     ///Read/write to existing file or make a new one
@@ -58,13 +58,13 @@ where
 
 /// A notification waking up a voxel.
 #[derive(Debug, Clone, Copy)]
-pub struct VoxEvent<R: Runtime>{
+pub struct VoxEvent<R: Registrar>{
     pub pos: Pos,
     pub vox_type: R::VoxelType,
     pub event_type: EventType<R>
 }
 #[derive(Debug, Clone, Copy)]
-pub enum EventType<R:Runtime>{
+pub enum EventType<R: Registrar>{
     Type(R::VoxelType),
     Neighbor,
     Removed,

@@ -2,17 +2,17 @@ use std::{io::Write, iter, marker::PhantomData, path::Path, sync::Arc};
 
 use serde::Serialize;
 
-use core_obj::Runtime;
+use core_obj::Registrar;
 use prelude::*;
 
 use crate::{arr3d::Arr3d, CHUNK_SIZE};
 
-pub struct MapFile<R: Runtime>{
+pub struct MapFile<R: Registrar>{
     pub(crate) path: Arc<Path>,    
     __marker: PhantomData<R>, //What
 
 }
-impl<R: Runtime> MapFile<R>{
+impl<R: Registrar> MapFile<R>{
     async fn init(path: Arc<Path>, runtime: &R) -> Result<Self>{
 
         Ok(Self { 

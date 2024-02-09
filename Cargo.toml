@@ -5,7 +5,7 @@ members = [
     "core-obj",
     "world-protocol",
     "world-db",
-    "runtime", 
+    "registrar",
 ]
 edition = "2021"
 workspace.resolver = "1"

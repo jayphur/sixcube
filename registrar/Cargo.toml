@@ -1,5 +1,5 @@
 [package]
-name = "sc-runtime"
+name = "sc-registrar"
 version = "0.1.0"
 edition = "2021"
 

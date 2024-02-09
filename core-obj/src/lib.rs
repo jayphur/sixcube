@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use prelude::*;
 
-pub trait Runtime: Sized + Debug + Clone + Send + Sync{
+pub trait Registrar: Sized + Debug + Clone + Send + Sync{
     type VoxelType: RuntimeType + Send + Sync + Debug + Clone + Copy + Serialize + for<'a> Deserialize<'a> + PartialEq;
     fn all_voxels(&self) -> &[Self::VoxelType];
     fn voxel_name(&self, voxel: &Self::VoxelType) -> Option<&String>;
@@ -30,10 +30,10 @@ pub trait RuntimeType{
 }
 
 #[derive(Debug)]
-pub struct Attr<R: Runtime>{
+pub struct Attr<R: Registrar>{
     pub my_type: R::AttrType,
 }
-impl<R: Runtime> Clone for Attr<R>{
+impl<R: Registrar> Clone for Attr<R>{
     fn clone(&self) -> Self {
         Self { my_type: self.my_type.clone() }
     }
