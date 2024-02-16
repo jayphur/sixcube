@@ -1,5 +1,7 @@
 #![feature(slice_flatten)]
 
+extern crate core;
+
 use std::ops::Deref;
 use std::path::Path;
 
@@ -19,8 +21,8 @@ mod chunk;
 //Smallest chunk 32^3
 //nah maybe 8^3
 
-const CHUNK_SIZE: usize = 16;
-const CHUNK_SIZE_I32: i32 = 16;
+const CHUNK_SIZE: usize = 32;
+const CHUNK_SIZE_I32: i32 = 32;
 
 
 #[derive(Debug)]
@@ -70,6 +72,12 @@ R: Registrar,
 
 #[derive(Clone, Copy, Default, Debug)]
 pub(crate) struct PosU(usize, usize, usize);
+
+impl PosU {
+    fn tuple(&self) -> (usize,usize,usize){
+        (self.0,self.1,self.2)
+    }
+}
 
 impl From<ChunkLocalPos> for PosU {
     fn from(value: ChunkLocalPos) -> Self {

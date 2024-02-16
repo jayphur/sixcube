@@ -9,3 +9,4 @@ edition = "2021"
 prelude = {path = "../prelude"}
 core-obj = {path = "../core-obj"}
 async-trait = "0.1.74"
+serde = { version = "1.0.193", features = ["derive"] }

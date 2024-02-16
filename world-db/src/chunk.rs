@@ -1,4 +1,9 @@
-use rustc_hash::FxHashMap;
+use core::hash;
+use std::hash::BuildHasherDefault;
+
+use itertools::Itertools;
+use rustc_hash::{FxHasher, FxHashMap};
+use serde::{Deserialize, Serialize};
 use sync::RwLock;
 use tokio::sync;
 
@@ -8,6 +13,7 @@ use world_protocol::chunks::WriteChunk as WriteChunkTrait;
 use world_protocol::pos::{ChunkLocalPos, ChunkPos};
 
 use crate::arr3d::Arr3d;
+use crate::disk::rle::Arr3dRLE;
 
 //TODO: special solid and empty variants (NOTE: enum's are as large as their largest variant, don't use just an enum)
 #[derive(Debug)]
@@ -33,10 +39,10 @@ impl<R: Registrar> Chunk<R> {
     }
 }
 
-#[derive(Debug, Clone)]
-struct ChunkData<R: Registrar>{
-    voxels: Arr3d<Option<R::VoxelType>>,
-    voxel_data: FxHashMap<ChunkLocalPos, R::DataContainer>
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ChunkData<R: Registrar>{
+    pub(crate) voxels: Arr3d<Option<R::VoxelType>>,
+    pub(crate) voxel_data: FxHashMap<ChunkLocalPos, R::DataContainer>
 }
 
 impl<R: Registrar> Default for ChunkData<R> {
@@ -52,7 +58,7 @@ impl<R: Registrar> ChunkData<R> {
 }
 
 pub struct ReadChunk<'a, R> where R: Registrar {
-    guard: sync::RwLockReadGuard<'a, ChunkData<R>>,
+    pub(crate) guard: sync::RwLockReadGuard<'a, ChunkData<R>>,
 }
 
 impl<'a, R> ReadChunkTrait<R> for ReadChunk<'a, R>
@@ -71,7 +77,7 @@ where R: Registrar
 
 
 pub struct WriteChunk<'a, R> where R: Registrar {
-    guard: sync::RwLockWriteGuard<'a, ChunkData<R>>,
+    pub(crate) guard: sync::RwLockWriteGuard<'a, ChunkData<R>>,
 }
 
 impl<'a, R> ReadChunkTrait<R> for WriteChunk<'a, R>
@@ -105,6 +111,70 @@ where R: Registrar
             self.guard.voxel_data.insert(pos, R::DataContainer::default());
             self.guard.voxel_data.get_mut(&pos).unwrap()
         }
+
+    }
+}
+
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct SmallerChunk<R: Registrar>{
+    voxels: Arr3dRLE<Option<R::VoxelType>>,
+    data: Vec<(ChunkLocalPos, R::DataContainer)>,
+}
+
+impl<R: Registrar> SmallerChunk<R> {
+    pub fn new(chunk: &ChunkData<R>) -> Self{
+        Self{
+            voxels: Arr3dRLE::from(chunk.voxels.clone()),
+            data: chunk.voxel_data.iter().map(|(&k,v)|(k,v.clone())).collect_vec(),
+        }
+    }
+    pub fn to_data(self) -> ChunkData<R>{
+        let hasher: BuildHasherDefault<FxHasher> = hash::BuildHasherDefault::default();
+        let mut voxel_data = FxHashMap::with_capacity_and_hasher(self.data.len(), hasher);
+        voxel_data.extend(self.data);
+        ChunkData{
+            voxels: self.voxels.into(),
+            voxel_data,
+        }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use std::ops::Deref;
+
+    use core_obj::fake::{FakeRegistrar, FakeVoxel};
+
+    use crate::PosU;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn round_trip_bincode() {
+        let chunk: Chunk<FakeRegistrar> = Chunk::new();
+        let read = chunk.read(Default::default()).await;
+        let data = read.guard.deref();
+        let mut serialized = bincode::serialize(data).unwrap();
+        let deserialized: ChunkData<FakeRegistrar> = bincode::deserialize(&serialized).unwrap();
+        assert_eq!(*data, deserialized);
+    }
+
+    #[tokio::test]
+    /// I was worried that this would cause an error? It does not.
+    async fn serialize_blank() {
+        let blank = vec![0u8;32779 + 1];
+        let deserialized: ChunkData<FakeRegistrar> = bincode::deserialize(&blank).unwrap();
+    }
+
+    #[tokio::test]
+    async fn round_trip_smaller_chunk(){
+        let mut chunk_data: ChunkData<FakeRegistrar> = ChunkData::default();
+        *chunk_data.voxels.get_mut(PosU(0,4,2)) = Some(FakeVoxel(33));
+        let smaller = SmallerChunk::new(&chunk_data);
+        let conv_chunk = smaller.to_data();
+        assert_eq!(conv_chunk, chunk_data);
 
     }
 }

@@ -11,9 +11,9 @@ world-protocol = {path = "../world-protocol"}
 core-obj = { path = "../core-obj"}
 vector3d = "0.2.1"
 rustc-hash = "1.1.0"
-tokio = {version = "1.35.0", features = ["fs","sync","rt"]}
+tokio = {version = "1.35.0", features = ["fs","sync","rt","io-util","macros"]}
 async-trait = "0.1.74"
 serde = {version = "1.0.193", features = ["derive"]}
-bson = "2.8.0"
 tempfile = "3.8.1"
 itertools = "0.12.0"
+bincode = "1.3.3"

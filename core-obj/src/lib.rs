@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use prelude::*;
 
+pub mod fake;
+
 pub trait Registrar: Sized + Debug + Clone + Send + Sync{
     type VoxelType: RuntimeType + Send + Sync + Debug + Clone + Copy + Serialize + for<'a> Deserialize<'a> + PartialEq;
     fn all_voxels(&self) -> &[Self::VoxelType];
@@ -22,7 +24,7 @@ pub trait Registrar: Sized + Debug + Clone + Send + Sync{
     /// How the data is formatted, aka the containers composition: Responsibility of the Runtime
     ///
     /// How the data is used: Responsibility of the plugin.
-    type DataContainer: Sync + Send + Clone + Default + Debug + for <'a> Deserialize<'a> + PartialEq;
+    type DataContainer: Sync + Send + Clone + Default + Debug + Serialize + for <'a> Deserialize<'a> + PartialEq;
 }
 
 /// A type, as part of the user defined plugin system

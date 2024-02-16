@@ -1,7 +1,10 @@
+use serde::{Deserialize, Serialize};
+
 use core_obj::Pos;
 
 use crate::CHUNK_SIZE_I32;
 
+/// Position based on chunks
 #[derive(Debug, Default, Clone, Copy, Hash, Eq, PartialEq)]
 pub struct ChunkPos(pub i16,pub i16,pub i16);
 
@@ -11,7 +14,8 @@ impl ChunkPos {
     }
 }
 
-#[derive(Debug, Default, Clone, Copy, Hash, Eq, PartialEq)]
+/// Position Local to a chunk
+#[derive(Debug, Default, Clone, Copy, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ChunkLocalPos(pub u8,pub u8,pub u8);
 
 impl ChunkLocalPos {
