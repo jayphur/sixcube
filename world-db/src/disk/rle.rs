@@ -1,12 +1,13 @@
 use std::fmt::Debug;
 use std::iter;
 
-use serde::Serialize;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::ser::SerializeStruct;
 
 use crate::arr3d::Arr3d;
 use crate::CHUNK_SIZE;
 
-#[derive(Debug, Clone, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Arr3dRLE<T> where T: Clone + Debug + Default + Serialize + PartialEq{
 	data: Vec<(u8,usize)>,
 	key: Vec<(u8,T)>,
@@ -66,7 +67,6 @@ impl<T> Into<Arr3d<T,>> for Arr3dRLE<T>
 		let mut full_length = self.data
 			.into_iter()
 			.flat_map(|(id, len)|{
-				println!("len = {len}");
 				iter::repeat(id).take(len)
 			})
 			.map(|id|{
@@ -95,9 +95,18 @@ mod test{
 		*starting.get_mut(PosU(0, 4, 13)) = -324;
 		*starting.get_mut(PosU(14, 5, 13)) = 945;
 		*starting.get_mut(PosU(15, 4, 13)) = 26894;
-		let converted: Arr3dRLE<i32> = starting.clone().into();
-		let back: Arr3d<i32> = converted.into();
-		assert_eq!(back, starting);
 
+		*starting.get_mut(PosU(5, 1, 15)) = 78;
+		*starting.get_mut(PosU(2, 0, 2)) = -32;
+		*starting.get_mut(PosU(4, 1, 5)) = 95;
+		*starting.get_mut(PosU(7, 8, 3)) = 2894;
+
+		let converted: Arr3dRLE<i32> = starting.clone().into();
+		let bin = bincode::serialize(&converted).unwrap();
+		println!("Bin length is {} bytes",bin.len());
+		let bin: Arr3dRLE<i32> = bincode::deserialize(&bin).unwrap();
+		let back: Arr3d<i32> = bin.into();
+		assert_eq!(back, starting);
 	}
+
 }

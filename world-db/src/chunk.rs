@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use sync::RwLock;
 use tokio::sync;
 
+use core_obj::fake::{FakeRegistrar, FakeVoxel};
 use core_obj::Registrar;
 use world_protocol::chunks::ReadChunk as ReadChunkTrait;
 use world_protocol::chunks::WriteChunk as WriteChunkTrait;
@@ -14,11 +15,12 @@ use world_protocol::pos::{ChunkLocalPos, ChunkPos};
 
 use crate::arr3d::Arr3d;
 use crate::disk::rle::Arr3dRLE;
+use crate::PosU;
 
 //TODO: special solid and empty variants (NOTE: enum's are as large as their largest variant, don't use just an enum)
 #[derive(Debug)]
 pub struct Chunk<R: Registrar>{
-    lock: RwLock<ChunkData<R>>,
+    lock: RwLock<ChunkData<R>>, // Maybe Arc this?
 }
 
 impl<R: Registrar> Chunk<R> {
@@ -43,6 +45,20 @@ impl<R: Registrar> Chunk<R> {
 pub struct ChunkData<R: Registrar>{
     pub(crate) voxels: Arr3d<Option<R::VoxelType>>,
     pub(crate) voxel_data: FxHashMap<ChunkLocalPos, R::DataContainer>
+}
+
+impl ChunkData<FakeRegistrar> {
+    ///Make some test chunk for testing.
+    pub fn test_chunk(mut seed: usize) -> ChunkData<FakeRegistrar>{
+        let numbers = [0,2,3,4,1,5,96,4,62,5,35,23,23,53,64,93,25,25,73,32,5,123,65,245,98,65,10,101];
+        let mut data = ChunkData::default();
+        for x in 0.. 64usize{
+            let pos = PosU((x*seed*97)%16,(x*seed*11)%16,(x*seed*13)%16);
+            *data.voxels.get_mut(pos) = Some(FakeVoxel(numbers[x*seed%numbers.len()]))
+        }
+        data
+    }
+
 }
 
 impl<R: Registrar> Default for ChunkData<R> {
@@ -143,15 +159,15 @@ impl<R: Registrar> SmallerChunk<R> {
 
 #[cfg(test)]
 mod tests {
-    use std::ops::Deref;
+	use std::ops::Deref;
 
-    use core_obj::fake::{FakeRegistrar, FakeVoxel};
+	use core_obj::fake::{FakeRegistrar, FakeVoxel};
 
-    use crate::PosU;
+	use crate::PosU;
 
-    use super::*;
+	use super::*;
 
-    #[tokio::test]
+	#[tokio::test]
     async fn round_trip_bincode() {
         let chunk: Chunk<FakeRegistrar> = Chunk::new();
         let read = chunk.read(Default::default()).await;
@@ -178,3 +194,4 @@ mod tests {
 
     }
 }
+

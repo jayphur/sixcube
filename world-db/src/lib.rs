@@ -1,6 +1,6 @@
 #![feature(slice_flatten)]
+#![feature(result_flattening)]
 
-extern crate core;
 
 use std::ops::Deref;
 use std::path::Path;
