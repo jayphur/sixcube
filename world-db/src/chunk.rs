@@ -159,15 +159,13 @@ impl<R: Registrar> SmallerChunk<R> {
 
 #[cfg(test)]
 mod tests {
-	use std::ops::Deref;
+    use std::ops::Deref;
 
-	use core_obj::fake::{FakeRegistrar, FakeVoxel};
+    use core_obj::fake::FakeRegistrar;
 
-	use crate::PosU;
+    use super::*;
 
-	use super::*;
-
-	#[tokio::test]
+    #[tokio::test]
     async fn round_trip_bincode() {
         let chunk: Chunk<FakeRegistrar> = Chunk::new();
         let read = chunk.read(Default::default()).await;
@@ -186,12 +184,19 @@ mod tests {
 
     #[tokio::test]
     async fn round_trip_smaller_chunk(){
-        let mut chunk_data: ChunkData<FakeRegistrar> = ChunkData::default();
-        *chunk_data.voxels.get_mut(PosU(0,4,2)) = Some(FakeVoxel(33));
+        let chunk_data: ChunkData<FakeRegistrar> = ChunkData::test_chunk(2389);
         let smaller = SmallerChunk::new(&chunk_data);
         let conv_chunk = smaller.to_data();
         assert_eq!(conv_chunk, chunk_data);
+    }
 
+    #[tokio::test]
+    async fn round_trip_smaller_chunk_bin(){
+        let chunk_data: ChunkData<FakeRegistrar> = ChunkData::test_chunk(985646899);
+        let smaller = SmallerChunk::new(&chunk_data);
+        let bin = bincode::serialize(&smaller).unwrap();
+        let conv_chunk = bincode::deserialize::<SmallerChunk<FakeRegistrar>>(&bin).unwrap().to_data();
+        assert_eq!(conv_chunk, chunk_data);
     }
 }
 

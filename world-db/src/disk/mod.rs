@@ -19,7 +19,7 @@ use core_obj::Registrar;
 use prelude::*;
 use world_protocol::pos::ChunkPos;
 
-use crate::chunk::ChunkData;
+use crate::chunk::{ChunkData, SmallerChunk};
 use crate::disk::region::RegionFile;
 use crate::PosU;
 
@@ -59,7 +59,7 @@ impl<R: Registrar + 'static, P: AsRef<Path>> MapFile<R, P>{
             let path= self.region_path(r_pos);
             join_set.spawn(async move {
                 let file = OpenOptions::new().read(true).write(false).open(path).await?;
-                let mut region_file: RegionFile<R> = RegionFile::init(file).await?;
+                let mut region_file: RegionFile<SmallerChunk<R>> = RegionFile::init(file).await?;
 
                 let mut list = Vec::with_capacity(r_local_pos.len());
 
@@ -69,7 +69,7 @@ impl<R: Registrar + 'static, P: AsRef<Path>> MapFile<R, P>{
                         Ok(data) => {
                             let data = match data{
                                 None => None,
-                                Some(data) => Some(Box::from(data))
+                                Some(data) => Some(Box::from(data.to_data()))
                             };
                             Ok((r_pos, local, data))
                         }
@@ -121,13 +121,13 @@ impl<R: Registrar + 'static, P: AsRef<Path>> MapFile<R, P>{
             join_set.spawn(async move{
                 let file = OpenOptions::new().read(true).write(true).create(true).open(&path).await
                     .with_context(||format!("Failed to open region file at {:?} during write operation for \"{:?}.\"", path, r_pos))?;
-                let mut region_file: RegionFile<R> = RegionFile::init(file).await
+                let mut region_file: RegionFile<SmallerChunk<R>> = RegionFile::init(file).await
                     .context("Failed to initialize region file during write operation.")?;
 
                 let mut errors: Vec<ErrorStruct> = Vec::new();
 
                 for (pos, data) in list{
-                    if let Err(err) = region_file.write(pos.into(), data.deref()).await{
+                    if let Err(err) = region_file.write(pos.into(), &SmallerChunk::new(&data)).await{
                         errors.push(err.into())
                     }
                 }
