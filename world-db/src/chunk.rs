@@ -9,6 +9,7 @@ use tokio::sync;
 
 use core_obj::fake::{FakeRegistrar, FakeVoxel};
 use core_obj::Registrar;
+use prelude::*;
 use world_protocol::chunks::ReadChunk as ReadChunkTrait;
 use world_protocol::chunks::WriteChunk as WriteChunkTrait;
 use world_protocol::pos::{ChunkLocalPos, ChunkPos};
@@ -52,9 +53,17 @@ impl ChunkData<FakeRegistrar> {
     pub fn test_chunk(mut seed: usize) -> ChunkData<FakeRegistrar>{
         let numbers = [0,2,3,4,1,5,96,4,62,5,35,23,23,53,64,93,25,25,73,32,5,123,65,245,98,65,10,101];
         let mut data = ChunkData::default();
-        for x in 0.. 64usize{
-            let pos = PosU((x*seed*97)%16,(x*seed*11)%16,(x*seed*13)%16);
-            *data.voxels.get_mut(pos) = Some(FakeVoxel(numbers[x*seed%numbers.len()]))
+        for x in 0.. 128usize{
+            let mut pos = PosU((x*seed*97)%16,(x*seed*11)%16,(x*seed*13)%16);
+            if (x+seed)%3%2==0{
+                for i in 0..x{
+                    *data.voxels.get_mut(
+                        PosU( (pos.0 + i ) % 16,pos.1,pos.2)
+                    ) = Some(FakeVoxel(numbers[x*seed%numbers.len()]))
+                }
+            } else {
+                *data.voxels.get_mut(pos) = Some(FakeVoxel(numbers[x*seed%numbers.len()]))
+            }
         }
         data
     }
@@ -145,14 +154,14 @@ impl<R: Registrar> SmallerChunk<R> {
             data: chunk.voxel_data.iter().map(|(&k,v)|(k,v.clone())).collect_vec(),
         }
     }
-    pub fn to_data(self) -> ChunkData<R>{
+    pub fn to_chunk(self) -> Result<ChunkData<R>>{
         let hasher: BuildHasherDefault<FxHasher> = hash::BuildHasherDefault::default();
         let mut voxel_data = FxHashMap::with_capacity_and_hasher(self.data.len(), hasher);
         voxel_data.extend(self.data);
-        ChunkData{
-            voxels: self.voxels.into(),
+        Ok(ChunkData{
+            voxels: self.voxels.into_arr3d()?,
             voxel_data,
-        }
+        })
     }
 }
 
@@ -186,17 +195,20 @@ mod tests {
     async fn round_trip_smaller_chunk(){
         let chunk_data: ChunkData<FakeRegistrar> = ChunkData::test_chunk(2389);
         let smaller = SmallerChunk::new(&chunk_data);
-        let conv_chunk = smaller.to_data();
+        let conv_chunk = smaller.to_chunk().unwrap();
         assert_eq!(conv_chunk, chunk_data);
     }
 
     #[tokio::test]
     async fn round_trip_smaller_chunk_bin(){
-        let chunk_data: ChunkData<FakeRegistrar> = ChunkData::test_chunk(985646899);
+        let chunk_data: ChunkData<FakeRegistrar> = ChunkData::test_chunk(985899);
+        let bin_data = bincode::serialize(&chunk_data).unwrap();
         let smaller = SmallerChunk::new(&chunk_data);
-        let bin = bincode::serialize(&smaller).unwrap();
-        let conv_chunk = bincode::deserialize::<SmallerChunk<FakeRegistrar>>(&bin).unwrap().to_data();
+        let bin_smaller = bincode::serialize(&smaller).unwrap();
+        let conv_chunk = bincode::deserialize::<SmallerChunk<FakeRegistrar>>(&bin_smaller).unwrap().to_chunk().unwrap();
         assert_eq!(conv_chunk, chunk_data);
+
+        println!("Size decrease: from {} to {}", bin_data.len(), bin_smaller.len());
     }
 }
 

@@ -1,5 +1,6 @@
 #![feature(slice_flatten)]
 #![feature(result_flattening)]
+#![feature(array_try_from_fn)]
 
 
 use std::ops::Deref;
@@ -74,6 +75,7 @@ R: Registrar,
 pub(crate) struct PosU(usize, usize, usize);
 
 impl PosU {
+    #[inline]
     fn tuple(&self) -> (usize,usize,usize){
         (self.0,self.1,self.2)
     }

@@ -6,6 +6,7 @@ use std::iter;
 use std::marker::PhantomData;
 use std::ops::DerefMut;
 
+use bincode::{DefaultOptions, Options};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use tokio::fs::File;
@@ -17,6 +18,11 @@ use prelude::*;
 use crate::PosU;
 
 const PADDING_BYTES: u64 = {4096};
+lazy_static!{
+	static ref BINCODE_OPTIONS: DefaultOptions = {
+		bincode::options()
+	};
+}
 
 ///Region don't use x y z just x
 fn to_index<T:Into<usize>>(xyz: (T, T, T)) -> usize{
@@ -27,25 +33,35 @@ fn to_index<T:Into<usize>>(xyz: (T, T, T)) -> usize{
 pub struct RegionFile<T: Serialize + for <'de> Deserialize<'de>  + Debug>{
 	file: File,
 	lookup_table: LookupTable,
-	shift_buf: Vec<u8>,
+	buffer: Vec<u8>,
+	needs_to_be_closed: bool,
 	__marker: PhantomData<T>
+}
+
+impl<T: Serialize + for<'de> Deserialize<'de> + Debug> Drop for RegionFile<T> {
+	fn drop(&mut self) {
+		if self.needs_to_be_closed {
+			panic!("RegionFile instance performed writing did not run `self.close()` before being dropped. Please run!")
+		}
+	}
 }
 
 impl<T: Serialize + for <'de> Deserialize<'de> + Debug> RegionFile<T> {
 	pub async fn init(mut file: File) -> Result<Self>{
 		let mut buf = Box::new([0u8;LOOKUP_TABLE_BYTE_SIZE]);
+		file.seek(SeekFrom::Start(0)).await?;
 		let lookup_table = match file.read_exact(buf.as_mut()).await{
 			Ok(LOOKUP_TABLE_BYTE_SIZE) =>{
-				LookupTable::decode(buf.as_slice())
+				LookupTable::init_from_bytes(buf.as_slice())
 			}
 			Ok(len) => {
-				file.write(&LookupTable::default().encode()).await
+				file.write(&LookupTable::default().to_bytes()).await
 					.with_context(||format!("attempted to write new lookup table to file {:?} but encountered error",file))?;
 				Ok(LookupTable::default())
 			},
 			Err(err) => {
 				Ok(if let std::io::ErrorKind::UnexpectedEof = err.kind(){
-					file.write(&LookupTable::default().encode()).await
+					file.write(&LookupTable::default().to_bytes()).await
 						.with_context(||format!("Lookup table did not exist in {:?}, error encountered when writing default lookup table to file.",file))?;
 					LookupTable::default()
 				} else {
@@ -57,7 +73,8 @@ impl<T: Serialize + for <'de> Deserialize<'de> + Debug> RegionFile<T> {
 		Ok(Self{
 			file,
 			lookup_table: lookup_table?,
-			shift_buf: vec![],
+			buffer: vec![],
+			needs_to_be_closed: false,
 			__marker: Default::default(),
 		})
 	}
@@ -76,23 +93,22 @@ impl<T: Serialize + for <'de> Deserialize<'de> + Debug> RegionFile<T> {
 
 		self.file.read_exact(&mut buffer).await
 			.with_context(||format!("failed reading the length of {} to buffer ", buffer.len()))?;
-		let deserialized = bincode::deserialize::<T>(buffer.as_slice())
+		let deserialized =  BINCODE_OPTIONS.deserialize::<T>(buffer.as_slice())
 			.with_context(||format!("failed deserializing from buffer of length {}, bytes are probably corrupted or misaligned.", buffer.len()))?;
-		//FIXME: issue with deserializing. According to the buffer size, there is the right amount of bytes in it.
 		Ok(Some(deserialized))
 	}
 	//FIXME: issue with writing large arrays where we hit a stack overflow, probably due to the serde encoding for the 3d array using recursion.
 	pub async fn write(&mut self, pos: PosU, t: &T) -> Result<()>{
+		self.needs_to_be_closed = true;
 		if pos.0 > 15 || pos.1 > 15 || pos.2 > 15{
 			return Err(anyhow!("attempting to write to region file at {:?}, out of bounds. Positions must be \"[0,16)\"",pos)	);
 		}
 		let index = to_index(pos.tuple());
-		let encoded= bincode::serialize(&t)?;
-		let mut length = (encoded.len() as u64) / PADDING_BYTES * PADDING_BYTES; // in bytes
-		if length == 0 {length = PADDING_BYTES}
+		let encoded=  BINCODE_OPTIONS.serialize(&t)?;
+		let mut full_length = (encoded.len() as u64).div_ceil(PADDING_BYTES) * PADDING_BYTES; // in bytes
 		let old_length = LOOKUP_TABLE_BYTE_SIZE as u64 + self.lookup_table.end;
-		self.lookup_table.fit(index, length);
-		self.lookup_table.set_padding(index,length-encoded.len() as u64);
+		self.lookup_table.fit(index, full_length);
+		self.lookup_table.set_padding(index, full_length -encoded.len() as u64);
 		let new_length = LOOKUP_TABLE_BYTE_SIZE as u64 + self.lookup_table.end;
 		let start = self.lookup_table.start(index) + LOOKUP_TABLE_BYTE_SIZE as u64;
 		if new_length != old_length{
@@ -107,17 +123,27 @@ impl<T: Serialize + for <'de> Deserialize<'de> + Debug> RegionFile<T> {
 	///shift everything back in the file
 	pub async fn shift(&mut self,pos: u64, amount: i64) -> Result<()>{
 		self.file.seek(SeekFrom::Start(pos)).await?;
-		self.shift_buf.clear();
-		self.file.read_to_end(&mut self.shift_buf).await?;
+		self.buffer.clear();
+		self.file.read_to_end(&mut self.buffer).await?;
 		let new_length = LOOKUP_TABLE_BYTE_SIZE as i64 + self.lookup_table.end as i64 + amount;
 		self.file.set_len(new_length as u64).await?;
 		self.file.seek(SeekFrom::Current(amount)).await?;
-		self.file.write(&self.shift_buf).await?;
+		self.file.write(&self.buffer).await?;
+		Ok(())
+	}
+
+	/// Run once finished with the region file instance
+	pub async fn close(mut self) -> Result<()>{
+		self.file.seek(SeekFrom::Start(0)).await?;
+		let table_bytes = self.lookup_table.to_bytes();
+		self.file.write(&table_bytes).await?;
+		self.file.flush().await?;
+		self.needs_to_be_closed = false;
 		Ok(())
 	}
 }
 
-const LOOKUP_TABLE_BYTE_SIZE: usize = {((16*16*16)*64 + 64 + (16*16*16)*16) / 8 + 16}; //Plus 18 for some reason...
+const LOOKUP_TABLE_BYTE_SIZE: usize = {((16*16*16)*64 + 64 + (16*16*16)*16) / 8 + 16 + 16}; //first + 16 => end, second + 16 => length
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 /// In bytes.
 pub struct LookupTable{
@@ -140,6 +166,8 @@ impl LookupTable {
 	fn start(&self, u: usize) -> u64{
 		self.start[u]
 	}
+
+	///w\\o padding, use `length_of_with_padding` for w\\ padding
 	fn length_of(&self, u: usize) -> u64{
 		self.length_of_with_padding(u) - self.padding[u] as u64
 	}
@@ -177,11 +205,20 @@ impl LookupTable {
 	fn set_padding(&mut self, index:usize, amount: u64){
 		self.padding[index] = amount as u16
 	}
-	fn encode(&self) -> Vec<u8>{
-		bincode::serialize(&self).unwrap()
+	fn to_bytes(&self) -> Vec<u8>{
+		let mut table = BINCODE_OPTIONS.serialize(&self).unwrap();
+		let mut vec = BINCODE_OPTIONS.serialize(&(table.len() as u64)).unwrap();
+		vec.resize(8, 0);
+		vec.append(&mut table);
+		vec.resize(LOOKUP_TABLE_BYTE_SIZE, 0);
+		vec
 	}
-	fn decode(slice: &[u8]) -> Result<Self>{
-		let decode: Self = bincode::deserialize(slice)?;
+	fn init_from_bytes(mut slice: &[u8]) -> Result<Self>{
+		let (length_indicator, slice) = slice.split_at(8);
+		let len: u64 = BINCODE_OPTIONS.allow_trailing_bytes().deserialize(length_indicator)?;
+		let (data, _) = slice.split_at(len as usize);
+		let decode: Self = BINCODE_OPTIONS.deserialize(data)
+			.with_context(|| format!("Failed to decode bytes (len = {}) when creating lookup table", slice.len()))?;
 		// if it's an empty boy, init.
 		if decode.padding.len() == 0 || decode.start.len() == 0{
 			return Ok(Self::default());
@@ -191,26 +228,79 @@ impl LookupTable {
 }
 #[cfg(test)]
 mod tests {
+	use std::io::SeekFrom;
+
+	use bincode::Options;
+	use tokio::io::{AsyncReadExt, AsyncSeekExt};
+
 	use core_obj::fake::FakeRegistrar;
+	use prelude::Result;
 
 	use crate::chunk::{ChunkData, SmallerChunk};
-	use crate::disk::region::{LOOKUP_TABLE_BYTE_SIZE, LookupTable, RegionFile};
+	use crate::disk::region::{BINCODE_OPTIONS, LOOKUP_TABLE_BYTE_SIZE, LookupTable, RegionFile, to_index};
 	use crate::PosU;
 
+	#[tokio::test]
+	async fn writing_correct_bytes() -> Result<()>{
+		let chunk1 = ChunkData::test_chunk(329857);
+		let chunk2 = ChunkData::test_chunk(25657);
+		let chunk1_bytes = BINCODE_OPTIONS.serialize(&SmallerChunk::new(&chunk1)).unwrap();
+		let chunk2_bytes =  BINCODE_OPTIONS.serialize(&SmallerChunk::new(&chunk2)).unwrap();
+		let temp_file = tempfile::NamedTempFile::new()?;
+		let file = tokio::fs::File::options().write(true).read(true).open(temp_file.path()).await?;
+		let mut region: RegionFile<SmallerChunk<FakeRegistrar>> = RegionFile::init(file).await?;
+		let mut buf = vec![];
+
+		region.write(PosU(0,0,0), &SmallerChunk::new(&chunk1)).await?;
+		region.write(PosU(1,0,0), &SmallerChunk::new(&chunk2)).await?;
+
+		let lookup_table = region.lookup_table.clone();
+		region.close().await?;
+
+		//Opening the file again for good measure.
+		let mut file = tokio::fs::File::options().read(true).open(temp_file.path()).await?;
+
+		//check if it contains chunk1_bytes at the advertised location
+		let index = to_index(PosU(0, 0, 0).tuple());
+		let start = lookup_table.start(index) + LOOKUP_TABLE_BYTE_SIZE as u64;
+		let length = lookup_table.length_of(index);
+		assert_eq!(length, chunk1_bytes.len() as u64);
+		buf.resize(length as usize, 0);
+		file.seek(SeekFrom::Start(start)).await?;
+		file.read_exact(&mut buf).await?;
+		assert_eq!(buf, chunk1_bytes);
+
+		//check if it contains chunk2_bytes at the advertised location
+		let index = to_index(PosU(1, 0, 0).tuple());
+		let start = lookup_table.start(index) + LOOKUP_TABLE_BYTE_SIZE as u64;
+		let length = lookup_table.length_of(index);
+		assert_eq!(length, chunk2_bytes.len() as u64);
+		buf.clear();
+		buf.resize(length as usize, 0);
+		file.seek(SeekFrom::Start(start)).await?;
+		file.read_exact(&mut buf).await?;
+		assert_eq!(buf, chunk2_bytes);
+
+		drop(temp_file);
+		Ok(())
+	}
 	#[test]
 	fn lookup_table_round_trip() {
 		let mut table = LookupTable::default();
 		*table.start.get_mut(2).unwrap() = 57;
 		*table.start.get_mut(23).unwrap() = 48795;
 		*table.start.get_mut(25).unwrap() = 48743295;
-		assert_eq!( LookupTable::decode(&table.encode()).unwrap(), table); // Round Trip
+		let bytes = table.to_bytes();
+		assert_eq!(bytes.len(), LOOKUP_TABLE_BYTE_SIZE);
+		assert_eq!(LookupTable::init_from_bytes(&bytes).unwrap(),table); // Round Trip
+
 	}
 	#[test]
-	fn lookup_table_bit_size(){
+	fn lookup_table_byte_size(){
 		let mut table = LookupTable::default();
 		assert_eq!( table.start.len(), 16*16*16);
 		assert_eq!( table.padding.len(), 16*16*16);
-		assert_eq!(table.encode().len(), LOOKUP_TABLE_BYTE_SIZE); // LOOKUP_TABLE_SIZE is accurate
+		assert_eq!(table.to_bytes().len(), LOOKUP_TABLE_BYTE_SIZE); // LOOKUP_TABLE_SIZE is accurate
 	}
 
 	#[test]
@@ -236,7 +326,7 @@ mod tests {
 	}
 
 	#[tokio::test]
-	async fn mock_storage_round_trip(){
+	async fn mock_storage_round_trip() -> Result<()>{
 		let data_1 = ChunkData::<FakeRegistrar>::test_chunk(1);
 		let data_2 = ChunkData::<FakeRegistrar>::test_chunk(2);
 		let data_3 = ChunkData::<FakeRegistrar>::test_chunk(3);
@@ -249,16 +339,24 @@ mod tests {
 		region.write(PosU(0,0,0),&SmallerChunk::new(&data_1)).await.unwrap();
 		region.write(PosU(0,2,0),&SmallerChunk::new(&data_3)).await.unwrap();
 
-		let read = region.read(PosU(0,0,0)).await.unwrap().unwrap().to_data();
-		assert_eq!(data_1, read);
+		region.close().await?;
 
-		let read = region.read(PosU(1,0,0)).await.unwrap().unwrap().to_data();
-		assert_eq!(data_2, read);
+		let file = tokio::fs::File::options().read(true).open(temp_file.path()).await.unwrap();
+		let mut region: RegionFile<SmallerChunk<FakeRegistrar>> = RegionFile::init(file).await.unwrap();
 
-		let read = region.read(PosU(0,2,0)).await.unwrap().unwrap().to_data();
-		assert_eq!(data_3, read);
+		let read = region.read(PosU(0,0,0)).await?.unwrap();
+		assert_eq!(data_1, read.to_chunk()?);
 
-		drop(temp_file)
+		let read = region.read(PosU(1,0,0)).await?.unwrap();
+		assert_eq!(data_2, read.to_chunk()?);
+
+		let read = region.read(PosU(0,2,0)).await?.unwrap();
+		assert_eq!(data_3, read.to_chunk()?);
+
+		region.close().await?;
+		drop(temp_file);
+
+		Ok(())
 	}
 
 	#[test]

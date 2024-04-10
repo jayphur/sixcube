@@ -69,7 +69,7 @@ impl<R: Registrar + 'static, P: AsRef<Path>> MapFile<R, P>{
                         Ok(data) => {
                             let data = match data{
                                 None => None,
-                                Some(data) => Some(Box::from(data.to_data()))
+                                Some(data) => Some(Box::from(data.to_chunk()?))
                             };
                             Ok((r_pos, local, data))
                         }
