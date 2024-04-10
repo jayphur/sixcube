@@ -24,7 +24,7 @@ impl<T> Arr3dRLE<T> where T: Clone + Debug + Default + Serialize + PartialEq {
 				iter::repeat(id).take(len)
 			})
 			.map(|id|{
-				let Some((id,val)) = self.key.iter().find(|(key_id,val)| *key_id == id) else {
+				let Some((_,val)) = self.key.iter().find(|(key_id,val)| *key_id == id) else {
 					return Err(anyhow!("Arr3dRLE missing key for id: {}", id))
 				};
 				return Ok(val.clone())

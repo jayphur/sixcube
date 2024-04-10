@@ -200,9 +200,9 @@ impl From<ChunkPos> for RegionPos {
             }
         };
         Self(
-            n(value.0) as i16,
-            n(value.1) as i16,
-            n(value.2) as i16
+            n(value.0),
+            n(value.1),
+            n(value.2)
         )
     }
 }

@@ -54,7 +54,7 @@ impl<T: Serialize + for <'de> Deserialize<'de> + Debug> RegionFile<T> {
 			Ok(LOOKUP_TABLE_BYTE_SIZE) =>{
 				LookupTable::init_from_bytes(buf.as_slice())
 			}
-			Ok(len) => {
+			Ok(_) => {
 				file.write(&LookupTable::default().to_bytes()).await
 					.with_context(||format!("attempted to write new lookup table to file {:?} but encountered error",file))?;
 				Ok(LookupTable::default())
@@ -367,29 +367,29 @@ mod tests {
 	#[test]
 	fn lookup_table_fit() {
 		let mut table = LookupTable::default();
-		for x in (0..20) {
+		for x in 0..20 {
 			table.fit(x, 10);
 		}
-		for x in (0..20) {
+		for x in 0..20 {
 			table.fit(x, 9);
 		}
-		for x in (0..20) {
+		for x in 0..20 {
 			assert_eq!(table.length_of(x), 10);
 		}
-		for x in (0..20) {
+		for x in 0..20 {
 			assert_eq!(table.start(x), x as u64 *10);
 		}
 		table.fit(10, 25);
-		for x in (0..10){
+		for x in 0..10 {
 			assert_eq!(table.length_of(x), 10);
 			assert_eq!(table.start(x), x as u64 *10);
 		}
 		assert_eq!(table.length_of(10),25);
-		for x in (11..20){
+		for x in 11..20 {
 			assert_eq!(table.length_of(x), 10);
 			assert_eq!(table.start(x), x as u64 *10 + 15);
 		}
-		for x in (30..16*16*16-1){
+		for x in 30..16*16*16-1 {
 			assert_eq!(table.length_of(x), 0);
 		}
 	}
