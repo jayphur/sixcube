@@ -131,6 +131,7 @@ impl<R: Registrar + 'static, P: AsRef<Path>> MapFile<R, P>{
                         errors.push(err.into())
                     }
                 }
+                region_file.close().await?;
                 Ok(errors)
             });
         }

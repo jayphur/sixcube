@@ -106,39 +106,40 @@ impl<T: Serialize + for <'de> Deserialize<'de> + Debug> RegionFile<T> {
 		let index = to_index(pos.tuple());
 		let encoded=  BINCODE_OPTIONS.serialize(&t)?;
 		let mut full_length = (encoded.len() as u64).div_ceil(PADDING_BYTES) * PADDING_BYTES; // in bytes
-		let old_length = LOOKUP_TABLE_BYTE_SIZE as u64 + self.lookup_table.end;
-		self.lookup_table.fit(index, full_length);
+		let shifted = self.lookup_table.fit(index, full_length);
 		self.lookup_table.set_padding(index, full_length -encoded.len() as u64);
-		let new_length = LOOKUP_TABLE_BYTE_SIZE as u64 + self.lookup_table.end;
 		let start = self.lookup_table.start(index) + LOOKUP_TABLE_BYTE_SIZE as u64;
-		if new_length != old_length{
-			self.shift(start, new_length as i64 - old_length as i64).await?;
-		}
+		self.shift(start, shifted as i64).await?;
 		self.file.seek(SeekFrom::Start(start)).await?;
 		self.file.write_all(&encoded).await?;
 		self.file.flush().await?;
 		Ok(())
 	}
 
-	///shift everything back in the file
+	///shift everything back in the file, doesn't touch the lookup table.
 	pub async fn shift(&mut self,pos: u64, amount: i64) -> Result<()>{
+		if amount == 0 {return Ok(())}
+		let amount = amount.div_euclid(PADDING_BYTES as i64)*PADDING_BYTES as i64;
 		self.file.seek(SeekFrom::Start(pos)).await?;
 		self.buffer.clear();
 		self.file.read_to_end(&mut self.buffer).await?;
 		let new_length = LOOKUP_TABLE_BYTE_SIZE as i64 + self.lookup_table.end as i64 + amount;
 		self.file.set_len(new_length as u64).await?;
-		self.file.seek(SeekFrom::Current(amount)).await?;
-		self.file.write(&self.buffer).await?;
+		self.file.seek(SeekFrom::Start( (pos as i64 + amount) as u64)).await?;
+		self.file.write_all(&self.buffer).await?;
+
 		Ok(())
 	}
 
 	/// Run once finished with the region file instance
 	pub async fn close(mut self) -> Result<()>{
-		self.file.seek(SeekFrom::Start(0)).await?;
-		let table_bytes = self.lookup_table.to_bytes();
-		self.file.write(&table_bytes).await?;
-		self.file.flush().await?;
-		self.needs_to_be_closed = false;
+		if self.needs_to_be_closed {
+			self.file.seek(SeekFrom::Start(0)).await?;
+			let table_bytes = self.lookup_table.to_bytes();
+			self.file.write_all(&table_bytes).await?;
+			self.file.flush().await?;
+			self.needs_to_be_closed = false;
+		}
 		Ok(())
 	}
 }
@@ -179,8 +180,8 @@ impl LookupTable {
 		}
 	}
 
-	///makes sure this index can fit this amount (or greater)
-	fn fit(&mut self, index: usize, amount: u64){
+	///makes sure this index can fit this amount (or greater), returning the amount that everything got shifted
+	fn fit(&mut self, index: usize, amount: u64) -> u64{
 		let current_length_full = self.length_of_with_padding(index);
 		let current_length = self.length_of(index);
 
@@ -193,10 +194,12 @@ impl LookupTable {
 				.skip(index + 1)
 				.for_each(|val| *val += amount);
 			self.end += amount;
+			return amount;
 		} else if amount > current_length{
 			let extra = amount - current_length;
 			self.set_padding(index, self.padding[index] as u64 - extra);
 		}
+		return 0;
 
 	}
 
@@ -251,8 +254,8 @@ mod tests {
 		let mut region: RegionFile<SmallerChunk<FakeRegistrar>> = RegionFile::init(file).await?;
 		let mut buf = vec![];
 
-		region.write(PosU(0,0,0), &SmallerChunk::new(&chunk1)).await?;
 		region.write(PosU(1,0,0), &SmallerChunk::new(&chunk2)).await?;
+		region.write(PosU(0,0,0), &SmallerChunk::new(&chunk1)).await?;
 
 		let lookup_table = region.lookup_table.clone();
 		region.close().await?;
@@ -281,6 +284,7 @@ mod tests {
 		file.read_exact(&mut buf).await?;
 		assert_eq!(buf, chunk2_bytes);
 
+		drop(file);
 		drop(temp_file);
 		Ok(())
 	}
@@ -290,6 +294,7 @@ mod tests {
 		*table.start.get_mut(2).unwrap() = 57;
 		*table.start.get_mut(23).unwrap() = 48795;
 		*table.start.get_mut(25).unwrap() = 48743295;
+		*table.start.get_mut(1).unwrap() = 342;
 		let bytes = table.to_bytes();
 		assert_eq!(bytes.len(), LOOKUP_TABLE_BYTE_SIZE);
 		assert_eq!(LookupTable::init_from_bytes(&bytes).unwrap(),table); // Round Trip
@@ -354,8 +359,8 @@ mod tests {
 		assert_eq!(data_3, read.to_chunk()?);
 
 		region.close().await?;
-		drop(temp_file);
 
+		drop(temp_file);
 		Ok(())
 	}
 
@@ -363,10 +368,10 @@ mod tests {
 	fn lookup_table_fit() {
 		let mut table = LookupTable::default();
 		for x in (0..20) {
-			table.fit(x, 10)
+			table.fit(x, 10);
 		}
 		for x in (0..20) {
-			table.fit(x, 9)
+			table.fit(x, 9);
 		}
 		for x in (0..20) {
 			assert_eq!(table.length_of(x), 10);
