@@ -5,14 +5,16 @@
 
 use std::ops::Deref;
 use std::path::Path;
+use std::sync::Arc;
 
 use async_trait::async_trait;
 use rustc_hash::FxHashMap;
-use tokio::sync::mpsc;
 
 use core_obj::Registrar;
 use prelude::*;
 use world_protocol::{pos::{ChunkLocalPos, ChunkPos}, VoxEvent};
+
+use crate::disk::MapFile;
 
 mod arr3d;
 mod disk;
@@ -32,22 +34,33 @@ where
 R: Registrar,
 {
     chunks: FxHashMap<ChunkPos, chunk::Chunk<R>>,
-    events: mpsc::Sender<VoxEvent<R>>,
+    file: MapFile<R, Arc<Path>>,
+
 }
 #[async_trait]
 impl<R> world_protocol::Map<R> for Map<R> 
 where 
 R: Registrar + Sync + Send + 'static,
 {
+    type EventListener = EventListener<R>;
+
     ///Read/write to existing file or make a new one
-    async fn init(path: &Path, runtime: &R) -> Result<(Self, std::sync::mpsc::Receiver<VoxEvent<R>>)>{
-        todo!()
-    }  
-    async fn add_event(&self, alert: VoxEvent<R>) -> Result<()>{
-        self.events.send(alert).await?;
-        Ok(())
+    async fn init(path: Arc<Path>, registrar: &R) -> Result<(Self, Self::EventListener)>{
+        let map_file = MapFile::init(path, registrar).await?;
+        let map = Self{
+            chunks: Default::default(),
+            file: map_file,
+        };
+        let listener = EventListener{
+
+        };
+        Ok((map, listener))
     }
-    
+    async fn push_event(&self, alert: VoxEvent<R>) -> Result<()>{
+        todo!()
+    }
+
+
     type ReadChunk<'a> = chunk::ReadChunk<'a, R> where Self: 'a;
     type WriteChunk<'a> = chunk::WriteChunk<'a, R> where Self: 'a;
 
@@ -84,4 +97,10 @@ impl From<ChunkLocalPos> for PosU {
     }
 }
 
+#[derive(Debug)]
+pub struct EventListener<R: Registrar>{
 
+}
+impl<R: Registrar> world_protocol::EventListener<R> for EventListener<R> {
+
+}

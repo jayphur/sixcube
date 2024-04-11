@@ -37,7 +37,7 @@ lazy_static!{
 pub struct MapFile<R: Registrar, P: AsRef<Path>>{
     pub(crate) path: P,
     pub(crate) region_dir: Arc<PathBuf>,
-    __marker: PhantomData<R>, //What
+    __marker: PhantomData<R>, //What // hi
 
 }
 impl<R: Registrar + 'static, P: AsRef<Path>> MapFile<R, P>{

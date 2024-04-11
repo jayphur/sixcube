@@ -1,5 +1,6 @@
 use core::hash;
 use std::hash::BuildHasherDefault;
+use std::sync::Arc;
 
 use itertools::Itertools;
 use rustc_hash::{FxHasher, FxHashMap};
@@ -13,6 +14,7 @@ use prelude::*;
 use world_protocol::chunks::ReadChunk as ReadChunkTrait;
 use world_protocol::chunks::WriteChunk as WriteChunkTrait;
 use world_protocol::pos::{ChunkLocalPos, ChunkPos};
+use world_protocol::VoxEvent;
 
 use crate::arr3d::Arr3d;
 use crate::disk::rle::Arr3dRLE;
@@ -108,6 +110,10 @@ pub struct WriteChunk<'a, R> where R: Registrar {
 impl<'a, R> ReadChunkTrait<R> for WriteChunk<'a, R>
 where R: Registrar
 {
+    fn peek_events(&self) -> &[Arc<VoxEvent<R>>] {
+        todo!()
+    }
+
     fn get_type(&self, pos: ChunkLocalPos) -> Option<R::VoxelType> {
         *self.guard.voxels.get(pos.into())
     }
@@ -120,6 +126,10 @@ where R: Registrar
 impl<'a, R> WriteChunkTrait<R> for WriteChunk<'a, R>
 where R: Registrar
 {
+    fn pop_event(&self) -> Option<Arc<VoxEvent<R>>> {
+        todo!()
+    }
+
     fn get_type_mut(&mut self, pos: ChunkLocalPos) -> &mut Option<R::VoxelType> {
         self.guard.voxels.get_mut(pos.into())
     }

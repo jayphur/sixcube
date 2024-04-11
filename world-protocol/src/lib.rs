@@ -22,7 +22,7 @@
 //Note: we're trying to avoid that dreaded &dyn. it's stinky, silly, annoying, and hard to work with. 
 
 use std::path::Path;
-use std::sync::mpsc;
+use std::sync::Arc;
 
 use async_trait::async_trait;
 
@@ -43,11 +43,12 @@ pub trait Map<R>
 where
     R: Registrar,
     Self: Sized,
-{  
-    ///Read/write to existing file or make a new one
-    async fn init(path: &Path, runtime: &R) -> Result<(Self, mpsc::Receiver<VoxEvent<R>>)>;
-    async fn add_event(&self, alert: VoxEvent<R>) -> Result<()>;
-
+{
+    type EventListener: EventListener<R>;
+    /// Read/write to existing file or make a new one
+    async fn init(path: Arc<Path>, runtime: &R) -> Result<(Self, Self::EventListener)>;
+    /// externally push an event.
+    async fn push_event(&self, alert: VoxEvent<R>) -> Result<()>;
     type ReadChunk<'a>: ReadChunk<R> where Self: 'a;
     type WriteChunk<'a>: WriteChunk<R> where Self: 'a;
 
@@ -55,6 +56,13 @@ where
     async fn write_chunk<'b>(&'b mut self, pos: ChunkPos) -> Option<Self::WriteChunk<'b>>;
 }
 
+///A struct that you can be to notified if:
+/// - Something happens at a specific chunk
+/// - Something happens regarding a specific voxel type
+/// - Whenever some specific event happens
+pub trait EventListener<R: Registrar>{
+    //TODO: how do we want this to work? (decide once we need it)
+}
 /// A notification waking up a voxel.
 #[derive(Debug, Clone, Copy)]
 pub struct VoxEvent<R: Registrar>{
