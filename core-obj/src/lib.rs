@@ -7,13 +7,13 @@ use prelude::*;
 pub mod fake;
 
 pub trait Registrar: Sized + Debug + Clone + Send + Sync{
-    type VoxelType: RuntimeType + Send + Sync + Debug + Clone + Copy + Serialize + for<'a> Deserialize<'a> + PartialEq;
+    type VoxelType: RegistrarType + Send + Sync + Debug + Clone + Copy + Serialize + for<'a> Deserialize<'a> + PartialEq;
     fn all_voxels(&self) -> &[Self::VoxelType];
     fn voxel_name(&self, voxel: &Self::VoxelType) -> Option<&String>;
     fn voxel_default_data(&self, voxel: &Self::VoxelType) -> Option<&Self::DataContainer>;
     fn find_voxel_by_name(&self, name: String) -> &Self::VoxelType;
 
-    type AttrType: RuntimeType + Send + Sync + Debug + Clone + Copy + Serialize + for <'a> Deserialize<'a> + PartialEq;
+    type AttrType: RegistrarType + Send + Sync + Debug + Clone + Copy + Serialize + for <'a> Deserialize<'a> + PartialEq;
     fn all_attr(&self) -> &[Self::AttrType];
     fn attr_name(&self, attr: &Self::AttrType) -> Option<&String>;
     fn attr_default(&self, attr: &Self::AttrType) -> Value;
@@ -28,7 +28,8 @@ pub trait Registrar: Sized + Debug + Clone + Send + Sync{
 }
 
 /// A type, as part of the user defined plugin system
-pub trait RuntimeType{
+pub trait RegistrarType {
+
 }
 
 #[derive(Debug)]

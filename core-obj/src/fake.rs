@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{Data, Registrar, RuntimeType, Value};
+use crate::{Data, Registrar, RegistrarType, Value};
 
 /// For tests
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -52,13 +52,13 @@ impl Registrar for FakeRegistrar{
 #[derive(Debug,Clone,Copy,Serialize,Deserialize, PartialEq,Eq)]
 pub struct FakeVoxel(pub u8);
 
-impl RuntimeType for FakeVoxel {
+impl RegistrarType for FakeVoxel {
 
 }
 
 #[derive(Debug,Clone,Copy,Serialize,Deserialize, PartialEq,Eq)]
 pub struct FakeAttrType(pub u8);
 
-impl RuntimeType for FakeAttrType {
+impl RegistrarType for FakeAttrType {
 
 }

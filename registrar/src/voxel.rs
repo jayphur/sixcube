@@ -1,16 +1,16 @@
 use serde::{Deserialize, Serialize};
 
-use core_obj::RuntimeType;
+use core_obj::RegistrarType;
 
 use crate::data::DataContainer;
 
 #[derive(Default, Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct VoxelType{
 	pub id: u16,
-	param: (u8, u8),
+	param: [u8;2],
 }
 
-impl RuntimeType for VoxelType {}
+impl RegistrarType for VoxelType {}
 
 #[derive(Debug, Clone)]
 pub struct VoxelInfo{

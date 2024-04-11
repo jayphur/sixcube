@@ -1,13 +1,13 @@
 use serde::{Deserialize, Serialize};
 
-use core_obj::{RuntimeType, Value};
+use core_obj::{RegistrarType, Value};
 
 #[derive(Default, Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct AttrType{
 	pub id: u16
 }
 
-impl RuntimeType for AttrType {}
+impl RegistrarType for AttrType {}
 
 
 #[derive(Debug, Clone)]
