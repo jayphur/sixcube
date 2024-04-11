@@ -25,8 +25,14 @@ use crate::PosU;
 
 pub mod rle;
 mod region;
+mod lookup_table;
 
 const REGION_DIRECTORY_NAME: &str = "regions";
+lazy_static!{
+    pub static ref BINCODE_OPTIONS: bincode::DefaultOptions = {
+		bincode::options()
+	};
+}
 
 pub struct MapFile<R: Registrar, P: AsRef<Path>>{
     pub(crate) path: P,
@@ -109,6 +115,7 @@ impl<R: Registrar + 'static, P: AsRef<Path>> MapFile<R, P>{
         }
         list
     }
+    //TODO: do writing of chunk pos in order for better performance.
     ///Batch writes this iterator of chunk data and associated position.
     pub async fn write<D, I>(&self, pos_data: I) -> Result<(), Vec<ErrorStruct>>
     where

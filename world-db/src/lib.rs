@@ -58,9 +58,6 @@ R: Registrar + Sync + Send + 'static,
         Some(self.chunks.get(&pos)?.write(pos).await)
     }
 
-    fn init_chunk(&mut self, pos: ChunkPos) {
-        todo!()
-    }
 }
 impl<R> Default for Map<R> 
 where 

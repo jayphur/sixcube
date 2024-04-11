@@ -13,7 +13,7 @@
 //! ## Consistence
 //! I want the updating to be consistent, 
 //! the old method of ensuring this (I could think of...) 
-//! was the two step *message & respond phase* and *apply phase*.
+//! was the two-step *message & respond phase* and *apply phase*.
 //! 
 //! Do I think this aligns with the proposed ECS-ish system, maybe, but it's pretty complicated.
 //! 
@@ -53,7 +53,6 @@ where
 
     async fn read_chunk<'b>(&'b self, pos: ChunkPos) -> Option<Self::ReadChunk<'b>>;
     async fn write_chunk<'b>(&'b mut self, pos: ChunkPos) -> Option<Self::WriteChunk<'b>>;
-    fn init_chunk(&mut self, pos: ChunkPos);
 }
 
 /// A notification waking up a voxel.
