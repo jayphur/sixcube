@@ -39,18 +39,16 @@ const CHUNK_SIZE_I32: i32 = 32;
 const CHUNK_SIZE_I8: i8 = 32;
 
 #[async_trait]
-pub trait Map<R>
+pub trait Map
 where
-    R: Registrar,
-    Self: Sized,
-{
-    type EventListener: EventListener<R>;
+    Self: Sized{
+    type EventListener: EventListener;
     /// Read/write to existing file or make a new one
-    async fn init(path: Arc<Path>, runtime: &R) -> Result<(Self, Self::EventListener)>;
+    async fn init(path: Arc<Path>, registrar: &Registrar) -> Result<(Self, Self::EventListener)>;
     /// externally push an event.
-    async fn push_event(&self, alert: VoxEvent<R>) -> Result<()>;
-    type ReadChunk<'a>: ReadChunk<R> where Self: 'a;
-    type WriteChunk<'a>: WriteChunk<R> where Self: 'a;
+    async fn push_event(&self, alert: VoxEvent) -> Result<()>;
+    type ReadChunk<'a>: ReadChunk where Self: 'a;
+    type WriteChunk<'a>: WriteChunk where Self: 'a;
 
     async fn read_chunk<'b>(&'b self, pos: ChunkPos) -> Option<Self::ReadChunk<'b>>;
     async fn write_chunk<'b>(&'b mut self, pos: ChunkPos) -> Option<Self::WriteChunk<'b>>;
@@ -60,19 +58,19 @@ where
 /// - Something happens at a specific chunk
 /// - Something happens regarding a specific voxel type
 /// - Whenever some specific event happens
-pub trait EventListener<R: Registrar>{
+pub trait EventListener{
     //TODO: how do we want this to work? (decide once we need it)
 }
 /// A notification waking up a voxel.
 #[derive(Debug, Clone, Copy)]
-pub struct VoxEvent<R: Registrar>{
+pub struct VoxEvent{
     pub pos: Pos,
-    pub vox_type: R::VoxelType,
-    pub event_type: EventType<R>
+    pub vox_type: VoxelId,
+    pub event_type: EventType
 }
 #[derive(Debug, Clone, Copy)]
-pub enum EventType<R: Registrar>{
-    Type(R::VoxelType),
+pub enum EventType{
+    Type(VoxelId),
     Neighbor,
     Removed,
     Inventory,

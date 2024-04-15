@@ -29,23 +29,17 @@ const CHUNK_SIZE_I32: i32 = 32;
 
 
 #[derive(Debug)]
-pub struct Map<R> 
-where 
-R: Registrar,
-{
-    chunks: FxHashMap<ChunkPos, chunk::Chunk<R>>,
-    file: MapFile<R, Arc<Path>>,
+pub struct Map {
+    chunks: FxHashMap<ChunkPos, chunk::Chunk>,
+    file: MapFile<Arc<Path>>,
 
 }
 #[async_trait]
-impl<R> world_protocol::Map<R> for Map<R> 
-where 
-R: Registrar + Sync + Send + 'static,
-{
-    type EventListener = EventListener<R>;
+impl world_protocol::Map for Map{
+    type EventListener = EventListener;
 
     ///Read/write to existing file or make a new one
-    async fn init(path: Arc<Path>, registrar: &R) -> Result<(Self, Self::EventListener)>{
+    async fn init(path: Arc<Path>, registrar: &Registrar) -> Result<(Self, Self::EventListener)>{
         let map_file = MapFile::init(path, registrar).await?;
         let map = Self{
             chunks: Default::default(),
@@ -56,13 +50,13 @@ R: Registrar + Sync + Send + 'static,
         };
         Ok((map, listener))
     }
-    async fn push_event(&self, alert: VoxEvent<R>) -> Result<()>{
+    async fn push_event(&self, alert: VoxEvent) -> Result<()>{
         todo!()
     }
 
 
-    type ReadChunk<'a> = chunk::ReadChunk<'a, R> where Self: 'a;
-    type WriteChunk<'a> = chunk::WriteChunk<'a, R> where Self: 'a;
+    type ReadChunk<'a> = chunk::ReadChunk<'a> where Self: 'a;
+    type WriteChunk<'a> = chunk::WriteChunk<'a> where Self: 'a;
 
     async fn read_chunk<'b>(&'b self, pos: ChunkPos) -> Option<Self::ReadChunk<'b>>{
         Some(self.chunks.get(&pos)?.read(pos).await)
@@ -72,10 +66,7 @@ R: Registrar + Sync + Send + 'static,
     }
 
 }
-impl<R> Default for Map<R> 
-where 
-R: Registrar,
-{
+impl Default for Map{
     fn default() -> Self {
         todo!()
     }
@@ -98,9 +89,9 @@ impl From<ChunkLocalPos> for PosU {
 }
 
 #[derive(Debug)]
-pub struct EventListener<R: Registrar>{
+pub struct EventListener{
 
 }
-impl<R: Registrar> world_protocol::EventListener<R> for EventListener<R> {
+impl world_protocol::EventListener for EventListener {
 
 }

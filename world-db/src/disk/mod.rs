@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, path::Path, sync::Arc};
+use std::{path::Path, sync::Arc};
 use std::collections::HashMap;
 use std::error::Error;
 use std::future::Future;
@@ -14,7 +14,6 @@ use tokio::fs::OpenOptions;
 use tokio::task::JoinSet;
 use tokio_stream::{Stream, StreamExt};
 
-use core_obj::fake::FakeRegistrar;
 use core_obj::Registrar;
 use prelude::*;
 use world_protocol::pos::ChunkPos;
@@ -34,14 +33,14 @@ lazy_static!{
 	};
 }
 
-pub struct MapFile<R: Registrar, P: AsRef<Path>>{
+#[derive(Debug)]
+pub struct MapFile<P: AsRef<Path>>{
     pub(crate) path: P,
     pub(crate) region_dir: Arc<PathBuf>,
-    __marker: PhantomData<R>, //What // hi
 
 }
-impl<R: Registrar + 'static, P: AsRef<Path>> MapFile<R, P>{
-    pub async fn init(path: P, registrar: &R) -> Result<Self>{
+impl<P: AsRef<Path>> MapFile<P>{
+    pub async fn init(path: P, registrar: &Registrar) -> Result<Self>{
         let region_dir = Arc::new(path.as_ref().join("region"));
         match fs::create_dir_all(&*region_dir).await {
             Ok(_) => {}
@@ -55,17 +54,16 @@ impl<R: Registrar + 'static, P: AsRef<Path>> MapFile<R, P>{
         Ok(Self { 
             path,
             region_dir,
-            __marker: PhantomData,
         })
     }
     ///batch read these ChunkPos, NOT preserving order.
-    pub async fn read(&self, pos: impl Iterator<Item=ChunkPos>) -> Vec<Result<(ChunkPos,Option<Box<ChunkData<R>>>)>>{
-        let mut join_set: JoinSet<Result<Vec<Result<(RegionPos, RegionLocalPos, Option<Box<ChunkData<R>>>)>>>> = JoinSet::new();
+    pub async fn read(&self, pos: impl Iterator<Item=ChunkPos>) -> Vec<Result<(ChunkPos,Option<Box<ChunkData>>)>>{
+        let mut join_set: JoinSet<Result<Vec<Result<(RegionPos, RegionLocalPos, Option<Box<ChunkData>>)>>>> = JoinSet::new();
         for (r_pos, r_local_pos) in Self::break_down_c_pos(pos){
             let path= self.region_path(r_pos);
             join_set.spawn(async move {
                 let file = OpenOptions::new().read(true).write(false).open(path).await?;
-                let mut region_file: RegionFile<SmallerChunk<R>> = RegionFile::init(file).await?;
+                let mut region_file: RegionFile<SmallerChunk> = RegionFile::init(file).await?;
 
                 let mut list = Vec::with_capacity(r_local_pos.len());
 
@@ -120,7 +118,7 @@ impl<R: Registrar + 'static, P: AsRef<Path>> MapFile<R, P>{
     pub async fn write<D, I>(&self, pos_data: I) -> Result<(), Vec<ErrorStruct>>
     where
         I: Iterator<Item=(ChunkPos, D)>,
-        D: Deref<Target=ChunkData<R>> + Send + Sync + 'static
+        D: Deref<Target=ChunkData> + Send + Sync + 'static
     {
         let mut join_set: JoinSet<Result<Vec<ErrorStruct>>> = JoinSet::new();
         for (r_pos, list) in break_down_c_pos_with_data::<D>(pos_data){
@@ -128,7 +126,7 @@ impl<R: Registrar + 'static, P: AsRef<Path>> MapFile<R, P>{
             join_set.spawn(async move{
                 let file = OpenOptions::new().read(true).write(true).create(true).open(&path).await
                     .with_context(||format!("Failed to open region file at {:?} during write operation for \"{:?}.\"", path, r_pos))?;
-                let mut region_file: RegionFile<SmallerChunk<R>> = RegionFile::init(file).await
+                let mut region_file: RegionFile<SmallerChunk> = RegionFile::init(file).await
                     .context("Failed to initialize region file during write operation.")?;
 
                 let mut errors: Vec<ErrorStruct> = Vec::new();
@@ -250,7 +248,7 @@ fn combine_region_pos(pos: RegionPos, local_pos: RegionLocalPos) -> ChunkPos{
 
 #[cfg(test)]
 mod tests {
-    use core_obj::fake::{FakeRegistrar, FakeVoxel};
+    use core_obj::fake::fake_voxel;
 
     use super::*;
 
@@ -292,7 +290,7 @@ mod tests {
             ChunkPos(-14,15,2), // R: -1,0,0
             ChunkPos(25,4,4),  // R: 1,0,0
         ];
-        let vec = MapFile::<FakeRegistrar, &Path>::break_down_c_pos(vec.iter().map(|v|*v));
+        let vec = MapFile::<&Path>::break_down_c_pos(vec.iter().map(|v|*v));
         assert_eq!(vec.len(), 6); // There are six regions needed for these requested chunks.
         let (_,list) = vec.iter().find(|&(r_pos,_)|{ *r_pos == RegionPos(0,0,0) }).unwrap();
         assert!(list.contains(&RegionLocalPos(0,0,0)));
@@ -338,23 +336,23 @@ mod tests {
     async fn round_trip_map_file(){ //TODO: DO with voxel data as well
         let file = tempfile::TempDir::new().unwrap();
         let path = file.path();
-        let map_file = MapFile::init(path, &FakeRegistrar::default()).await.unwrap();
+        let map_file = MapFile::init(path, &Registrar::default()).await.unwrap();
         let mut chunks = FxHashMap::default();
 
         // Test data
-        let mut data: ChunkData<FakeRegistrar> = ChunkData::default();
-        *data.voxels.get_mut(PosU(1,2,3)) = Some(FakeVoxel(1));
-        *data.voxels.get_mut(PosU(0,0,0)) = Some(FakeVoxel(1));
-        *data.voxels.get_mut(PosU(12,15,2)) = Some(FakeVoxel(12));
+        let mut data: ChunkData = ChunkData::default();
+        *data.voxels.get_mut(PosU(1,2,3)) = Some(fake_voxel(1));
+        *data.voxels.get_mut(PosU(0,0,0)) = Some(fake_voxel(1));
+        *data.voxels.get_mut(PosU(12,15,2)) = Some(fake_voxel(12));
         chunks.insert(ChunkPos(0,0,0), Arc::new(data));
         chunks.insert(ChunkPos(0,1,1),  Default::default());
         chunks.insert(ChunkPos(0,0,1), Default::default());
         chunks.insert(ChunkPos(-1,-1,1),  Default::default());
         chunks.insert(ChunkPos(-3948,-2349,3758),  Default::default());
-        let mut data: ChunkData<FakeRegistrar> = ChunkData::default();
-        *data.voxels.get_mut(PosU(0,0,0)) = Some(FakeVoxel(2));
-        *data.voxels.get_mut(PosU(0,0,5)) = Some(FakeVoxel(3));
-        *data.voxels.get_mut(PosU(11,0,4)) = Some(FakeVoxel(5));
+        let mut data: ChunkData = ChunkData::default();
+        *data.voxels.get_mut(PosU(0,0,0)) = Some(fake_voxel(2));
+        *data.voxels.get_mut(PosU(0,0,5)) = Some(fake_voxel(3));
+        *data.voxels.get_mut(PosU(11,0,4)) = Some(fake_voxel(5));
         chunks.insert(ChunkPos(0,1,0), Arc::new(data));
 
         map_file.write(chunks.iter().map(|(k,v)|(*k,v.clone()))).await.expect("Writing Test failed with: {}");

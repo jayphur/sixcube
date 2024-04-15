@@ -11,7 +11,6 @@ use serde::{Deserialize, Serialize};
 use tokio::fs::File;
 use tokio::io::{AsyncReadExt, AsyncSeek, AsyncSeekExt, AsyncWriteExt};
 
-use core_obj::Registrar;
 use prelude::*;
 
 use crate::disk::BINCODE_OPTIONS;
@@ -148,7 +147,6 @@ mod tests {
 	use bincode::Options;
 	use tokio::io::{AsyncReadExt, AsyncSeekExt};
 
-	use core_obj::fake::FakeRegistrar;
 	use prelude::Result;
 
 	use crate::chunk::{ChunkData, SmallerChunk};
@@ -165,7 +163,7 @@ mod tests {
 		let chunk2_bytes =  BINCODE_OPTIONS.serialize(&SmallerChunk::new(&chunk2)).unwrap();
 		let temp_file = tempfile::NamedTempFile::new()?;
 		let file = tokio::fs::File::options().write(true).read(true).open(temp_file.path()).await?;
-		let mut region: RegionFile<SmallerChunk<FakeRegistrar>> = RegionFile::init(file).await?;
+		let mut region: RegionFile<SmallerChunk> = RegionFile::init(file).await?;
 		let mut buf = vec![];
 
 		region.write(PosU(1,0,0), &SmallerChunk::new(&chunk2)).await?;
@@ -204,13 +202,13 @@ mod tests {
 	}
 	#[tokio::test]
 	async fn mock_storage_round_trip() -> Result<()>{
-		let data_1 = ChunkData::<FakeRegistrar>::test_chunk(1);
-		let data_2 = ChunkData::<FakeRegistrar>::test_chunk(2);
-		let data_3 = ChunkData::<FakeRegistrar>::test_chunk(3);
+		let data_1 = ChunkData::test_chunk(1);
+		let data_2 = ChunkData::test_chunk(2);
+		let data_3 = ChunkData::test_chunk(3);
 
 		let temp_file = tempfile::NamedTempFile::new().unwrap();
 		let file = tokio::fs::File::options().write(true).read(true).open(temp_file.path()).await.unwrap();
-		let mut region: RegionFile<SmallerChunk<FakeRegistrar>> = RegionFile::init(file).await.unwrap();
+		let mut region: RegionFile<SmallerChunk> = RegionFile::init(file).await.unwrap();
 
 		region.write(PosU(1,0,0),&SmallerChunk::new(&data_2)).await.unwrap();
 		region.write(PosU(0,0,0),&SmallerChunk::new(&data_1)).await.unwrap();
@@ -219,7 +217,7 @@ mod tests {
 		region.close().await?;
 
 		let file = tokio::fs::File::options().read(true).open(temp_file.path()).await.unwrap();
-		let mut region: RegionFile<SmallerChunk<FakeRegistrar>> = RegionFile::init(file).await.unwrap();
+		let mut region: RegionFile<SmallerChunk> = RegionFile::init(file).await.unwrap();
 
 		let read = region.read(PosU(0,0,0)).await?.unwrap();
 		assert_eq!(data_1, read.to_chunk()?);

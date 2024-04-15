@@ -10,3 +10,4 @@ description = "Abstract Core Types."
 prelude = { path = "../prelude" }
 serde = { version = "1.0.193" , features = ["derive"]}
 vector3d = "0.2.1"
+rustc-hash = "1.1.0"
