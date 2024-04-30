@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 prelude = {path = "../../prelude"}
-world-protocol = {path = "../../world-protocol"}
 core-obj = { path = "../../core-obj"}
 extism = "0.5.5"
 

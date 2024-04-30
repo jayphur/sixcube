@@ -3,7 +3,6 @@ members = [
     "plugin/*",
     "prelude",
     "core-obj",
-    "world-protocol",
     "world-db",
 ]
 edition = "2021"
