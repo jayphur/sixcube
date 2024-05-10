@@ -1,7 +1,6 @@
 use std::cmp::PartialEq;
 use std::future::Future;
 use std::io::ErrorKind;
-use std::marker::PhantomData;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -16,6 +15,7 @@ use crate::{ChunkPos, MapTrait};
 use crate::disk::encoding::{decode_chunk, encode_chunk};
 use crate::disk::lookup_table::LookupTable;
 use crate::disk::region::{get_table, RegionError};
+use crate::map::{ReadChunk, WriteChunk};
 use crate::map::chunk::ChunkData;
 
 mod lookup_table;
@@ -31,14 +31,13 @@ lazy_static!{
 }
 
 /// Abstracts logistics of caching lookup tables, updating lookup tables, etc.
-pub struct MapFile<M: MapTrait>{
+pub struct MapFile{
 	regions: RwLock<FxHashMap<RegionPos, RegionFileInfo>>,
 	region_dir: Arc<PathBuf>,
 	dir: Arc<PathBuf>,
-	__map: PhantomData<M>
 }
 ///////////////// Private
-impl<M: MapTrait> MapFile<M> {
+impl MapFile {
 	async fn init_region(&self, pos: RegionPos) -> Result<()>{
 		if self.regions.read().await.iter().find(|&(&p, _)| pos == pos).is_some(){
 			return Ok(());
@@ -66,7 +65,7 @@ impl<M: MapTrait> MapFile<M> {
 	}
 }
 ///////////////// Public
-impl<M: MapTrait> MapFile<M> {
+impl MapFile {
 	pub async fn init(path: Arc<PathBuf>) -> Result<Self>{
 		let region_dir = Arc::new(PathBuf::from(path.deref()).join(Path::new("regions")));
 		let mut region_map: FxHashMap<RegionPos,RegionFileInfo> = Default::default();
@@ -89,7 +88,7 @@ impl<M: MapTrait> MapFile<M> {
 			},
 			Err(err) => {
 				if let ErrorKind::NotFound = err.kind(){
-					 tokio::fs::create_dir(path.as_ref()).await?;
+					 tokio::fs::create_dir(region_dir.as_ref()).await?;
 				} else {
 					return Err(err.into())
 				}
@@ -100,7 +99,6 @@ impl<M: MapTrait> MapFile<M> {
 			regions: RwLock::new(region_map),
 			region_dir,
 			dir: path,
-			__map: Default::default(),
 		})
 	}
 	pub async fn read(&self, pos: ChunkPos) -> Result<Option<EncodedChunk>>{
@@ -206,6 +204,23 @@ impl EncodedChunk {
 		decode_chunk(&self.0)
 	}
 }
+
+impl<'a> ReadChunk<'a>{
+	pub fn encode(&self) -> EncodedChunk{
+		EncodedChunk(encode_chunk(&self.guard))
+	}
+}
+
+impl<'a> WriteChunk<'a>{
+	pub fn encode(&self) -> EncodedChunk{
+		EncodedChunk(encode_chunk(&self.guard))
+	}
+	pub fn decode(&mut self, data: &EncodedChunk) -> Result<()>{
+		*self.guard = data.decode()?;
+		Ok(())
+	}
+}
+
 
 #[cfg(test)]
 mod tests {

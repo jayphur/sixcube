@@ -13,8 +13,20 @@ pub struct ChunkData{
 	pub(crate) voxel_data: FxHashMap<ChunkLocalPos, DataContainer>,
 }
 
+impl PartialEq for ChunkData {
+	fn eq(&self, other: &Self) -> bool {
+		self.voxel_data.eq(&other.voxel_data) && self.voxels == other.voxels
+	}
+}
+
 pub struct WriteChunk<'a>{
 	pub guard: chashmap_async::WriteGuard<'a, ChunkPos,ChunkData,RandomState>
+}
+
+impl<'a> WriteChunk<'a> {
+	pub fn set_data(&mut self, data: ChunkData){
+		*self.guard = data;
+	}
 }
 
 impl<'a> WriteChunkTrait<'a> for WriteChunk<'a> {

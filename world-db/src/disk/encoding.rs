@@ -1,18 +1,18 @@
 use std::collections::HashMap;
-use std::hash::BuildHasherDefault;
+use std::hash::Hasher;
 use std::iter;
 
 use bincode::Options;
 use itertools::Itertools;
-use rustc_hash::{FxHasher, FxHashMap};
+use rustc_hash::{FxBuildHasher, FxHashMap};
 use serde::{Deserialize, Serialize};
 
 use core_obj::{DataContainer, VoxelId};
 use prelude::*;
 
-use crate::{CHUNK_USIZE, ChunkLocalPos};
 use crate::map::arr3d::Arr3d;
 use crate::map::chunk::ChunkData;
+use crate::{ChunkLocalPos, CHUNK_USIZE};
 
 /// NOTE: cpu bound for sure
 pub fn encode_chunk(chunk: &ChunkData) -> Vec<u8>{
@@ -39,8 +39,9 @@ impl SmallerChunk {
 		}
 	}
 	fn to_chunk(self) -> Result<ChunkData>{
-		let hasher: BuildHasherDefault<FxHasher> = BuildHasherDefault::default();
-		let mut voxel_data: HashMap<ChunkLocalPos, DataContainer, _> = FxHashMap::with_capacity_and_hasher(self.data.len(), hasher);
+		let hasher = FxBuildHasher::default();
+		let mut voxel_data: HashMap<ChunkLocalPos, DataContainer, _> =
+			FxHashMap::with_capacity_and_hasher(self.data.len(), hasher);
 		voxel_data.extend(self.data.iter().map(|(pos,val)|{(*pos,val.clone())}));
 		Ok(ChunkData{
 			voxels: self.voxels.into_arr3d()?,
@@ -123,14 +124,11 @@ impl<T> Arr3dRLE<T> where T: Clone + Debug + Default + Serialize + PartialEq {
 		}
 	}
 }
-
 #[cfg(test)]
 mod tests{
-	use prelude::Result;
-
-	use crate::PosU;
-
 	use super::{Arr3d, Arr3dRLE};
+	use crate::PosU;
+	use prelude::Result;
 
 	#[test]
 	fn round_trip_rle_arr3d() -> Result<()>{

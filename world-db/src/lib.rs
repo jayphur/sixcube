@@ -19,6 +19,7 @@ pub mod disk;
 pub trait MapTrait: Debug{
 	type ReadChunk<'a>: ReadChunkTrait<'a> where Self: 'a;
 	type WriteChunk<'a>: WriteChunkTrait<'a> where Self: 'a;
+	fn new() -> Self;
 
 	async fn read<'a>(&'a self, pos: ChunkPos) -> Result<Option<Self::ReadChunk<'a>>,Error>;
 	async fn write<'a>(&'a self, pos: ChunkPos) -> Result<Self::WriteChunk<'a>,Error>;
@@ -29,7 +30,6 @@ pub trait ReadChunkTrait<'a>{
 }
 pub trait WriteChunkTrait<'a>{
 	fn get_mut(&mut self, pos: PosU) -> &mut Option<VoxelId>;
-
 }
 
 #[derive(Default,Debug,Copy, Clone,Serialize,Deserialize, Hash, Eq, PartialEq)]
@@ -39,13 +39,14 @@ pub struct ChunkPos(pub i16,pub i16,pub i16);
 pub struct ChunkLocalPos(pub u8,pub u8,pub u8);
 
 
-
+#[derive(Debug)]
 pub enum Error{
 	DoesNotExist,
 	Other(ErrorStruct)
 }
 
-pub enum ChunkStatus<T>{
+#[derive(Debug)]
+pub enum ChunkStatus<T: Debug>{
 	Loaded(T),
 	NotLoaded,
 	Nonexistent,
