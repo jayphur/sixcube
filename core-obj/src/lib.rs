@@ -15,6 +15,16 @@ pub enum Value{
     I16(i16),
 }
 
+
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Serialize, Deserialize)]
+pub struct PosU(pub usize,pub usize,pub usize);
+
+impl PosU {
+    pub fn tuple(&self) -> (usize,usize,usize){
+        (self.0,self.1,self.2)
+    }
+}
+
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Pos(pub i32,pub i32,pub i32);
 
