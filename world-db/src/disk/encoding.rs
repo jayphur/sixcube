@@ -14,12 +14,12 @@ use crate::map::arr3d::Arr3d;
 use crate::map::chunk::ChunkData;
 use crate::{ChunkLocalPos, CHUNK_USIZE};
 
-/// NOTE: cpu bound for sure
+/// Cpu bound for sure.
 pub fn encode_chunk(chunk: &ChunkData) -> Vec<u8>{
 	let smaller = SmallerChunk::new(chunk);
 	super::BINCODE_OPTIONS.serialize(&smaller).unwrap()
 }
-/// NOTE: cpu bound for sure
+/// Cpu bound for sure.
 pub fn decode_chunk(bytes: &[u8]) -> Result<ChunkData>{
 	let smaller: SmallerChunk = super::BINCODE_OPTIONS.deserialize(bytes)?;
 	smaller.to_chunk()
@@ -85,13 +85,12 @@ impl<T> Arr3dRLE<T> where T: Clone + Debug + Default + Serialize + PartialEq {
 	}
 	fn from_arr3d(other: &Arr3d<T>) -> Self { //TODO: hacked garbage, but quarantined hacked garbage lmfao
 		let mut key: Vec<(u8,T)> = Vec::with_capacity(2);
-		let flat = other.0
+		let iter_flat = other.0.iter()
 			.flatten()
 			.flatten();
-		let mut next = flat.iter();
-		next.next();
+		let mut next = iter_flat.clone(); next.next();
 		let mut count: usize = 1;
-		let data = flat
+		let data = iter_flat
 			.into_iter()
 			.filter_map(|val|{
 				if Some(val) == next.next(){

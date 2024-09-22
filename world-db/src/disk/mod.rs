@@ -9,6 +9,7 @@ use rustc_hash::FxHashMap;
 use tokio::sync::RwLock;
 
 use core_obj::PosU;
+use core_obj::Value::I16;
 use prelude::*;
 
 use crate::{ChunkPos, MapTrait};
@@ -32,19 +33,19 @@ lazy_static!{
 
 /// Abstracts logistics of caching lookup tables, updating lookup tables, etc.
 pub struct MapFile{
-	regions: RwLock<FxHashMap<RegionPos, RegionFileInfo>>,
+	regions: FxHashMap<RegionPos, RegionFileInfo>,
 	region_dir: Arc<PathBuf>,
 	dir: Arc<PathBuf>,
 }
 ///////////////// Private
 impl MapFile {
-	async fn init_region(&self, pos: RegionPos) -> Result<()>{
-		if self.regions.read().await.iter().find(|&(&p, _)| pos == pos).is_some(){
+	async fn init_region(&mut self, pos: RegionPos) -> Result<()>{ 
+		if self.regions.iter().any(|(&p, _)| p == pos){
 			return Ok(());
 		}
-
-		let path = Arc::new(PathBuf::from(to_region_file_name(pos)));
-		let table = match region::get_table(&path).await{
+		
+		let path = Arc::new(self.region_dir.join(to_region_file_name(pos)));
+		let table = match get_table(&path).await{
 			Ok(opt) => Some(opt),
 			Err(RegionError::FileMissing) => None,
 			Err(RegionError::ContentsCorrupted) => return Err(anyhow!("Region File corrupted")),
@@ -60,14 +61,14 @@ impl MapFile {
 		if !region_file_exists{
 			region::create_region_file(&info).await?;
 		}
-		self.regions.write().await.insert(pos,info);
+		self.regions.insert(pos,info);
 		Ok(())
 	}
 }
 ///////////////// Public
 impl MapFile {
 	pub async fn init(path: Arc<PathBuf>) -> Result<Self>{
-		let region_dir = Arc::new(PathBuf::from(path.deref()).join(Path::new("regions")));
+		let region_dir = Arc::new(PathBuf::from(path.deref()).join(Path::new(REGION_DIRECTORY_NAME)));
 		let mut region_map: FxHashMap<RegionPos,RegionFileInfo> = Default::default();
 
 		match tokio::fs::read_dir(region_dir.as_ref()).await{
@@ -96,7 +97,7 @@ impl MapFile {
 		}
 
 		Ok(Self{
-			regions: RwLock::new(region_map),
+			regions: region_map,
 			region_dir,
 			dir: path,
 		})
@@ -104,22 +105,20 @@ impl MapFile {
 	pub async fn read(&self, pos: ChunkPos) -> Result<Option<EncodedChunk>>{
 		let region_pos = RegionPos::from(pos);
 		let region_local_pos = RegionLocalPos::from(pos);
-		let read_guard = self.regions.read().await;
-		let Some(info) = read_guard.get(&region_pos) else {
+		let Some(info) = self.regions.get(&region_pos) else {
 			return Ok(None);
 		};
 		Ok(region::read(info,region_local_pos.into()).await?)
 	}
 
-	pub async fn write(&self, pos: ChunkPos, data: &EncodedChunk) -> Result<()> {
+	pub async fn write(&mut self, pos: ChunkPos, data: &EncodedChunk) -> Result<()> {
 		let region_pos = RegionPos::from(pos);
 		let region_local_pos = RegionLocalPos::from(pos);
-		let mut write_guard = self.regions.write().await;
-		let info = if let Some(info) = write_guard.get_mut(&region_pos){
+		let info = if let Some(info) = self.regions.get_mut(&region_pos){
 			info
 		} else {
 			self.init_region(region_pos).await?;
-			write_guard.get_mut(&region_pos).unwrap()
+			self.regions.get_mut(&region_pos).unwrap()
 		};
 		Ok(region::write(info,region_local_pos.into(),data).await?)
 	}
@@ -132,7 +131,12 @@ impl From<ChunkPos> for RegionPos {
 	fn from(value: ChunkPos) -> Self {
 		let n = |val: i16| {
 			if val.is_negative(){
-				(val - 15)/16
+				if val == -i16::MAX{
+					-2048
+				}
+				else {
+					(val - 15)/16
+				}
 			} else{
 				val/16
 			}
@@ -149,11 +153,12 @@ impl From<ChunkPos> for RegionPos {
 
 struct RegionLocalPos(pub u16,pub u16,pub u16);
 
-impl Into<PosU> for RegionLocalPos {
-	fn into(self) -> PosU {
-		PosU(self.0 as usize,self.1 as usize,self.2 as usize)
+impl From<RegionLocalPos> for PosU {
+	fn from(value: RegionLocalPos) -> Self {
+		PosU(value.0 as usize,value.1 as usize,value.2 as usize)
 	}
 }
+
 
 impl From<ChunkPos> for RegionLocalPos {
 	fn from(value: ChunkPos) -> Self {
@@ -176,7 +181,7 @@ struct RegionFileInfo {
 	table: LookupTable,
 }
 
-fn to_region_file_name(pos: RegionPos) -> String{
+fn to_region_file_name(pos: RegionPos) -> String {
 	format!("{},{},{}.dat",pos.0,pos.1,pos.2)
 }
 

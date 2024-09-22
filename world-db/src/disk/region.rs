@@ -21,13 +21,12 @@ pub async fn create_region_file(info: &RegionFileInfo) -> Result<()>{
 	file.set_len(info.table.end()).await?;
 	file.seek(SeekFrom::Start(0)).await?;
 	let table_bytes = info.table.to_bytes();
-	file.write(&table_bytes).await?;
+	file.write_all(&table_bytes).await?;
 	Ok(())
 }
 /// Reading has the possibility of corruption.
 pub async fn get_table(path: &Arc<PathBuf>) -> Result<LookupTable,RegionError>{
-	let result = get_table__(path).await;
-	match result{
+	match get_table__(path).await{
 		Ok(buf) => {
 			if let Ok(table) = LookupTable::from_bytes(&buf){
 				Ok(table)
@@ -38,8 +37,10 @@ pub async fn get_table(path: &Arc<PathBuf>) -> Result<LookupTable,RegionError>{
 		Err(err) => Err(RegionError::from_tokio_io_error(err))
 	}
 }
-async fn get_table__(path: &Arc<PathBuf>) -> Result<Vec<u8>,tokio::io::Error>{
+/// The actual function, split up in order to handle errors cleanly
+async fn get_table__(path: &Arc<PathBuf>) -> Result<Vec<u8>,tokio::io::Error>{ 
 	let mut file = OpenOptions::new().write(false).read(true).open(path.as_ref()).await?;
+	
 	file.seek(SeekFrom::Start(0)).await?;
 	let mut buf = Vec::with_capacity(LOOKUP_TABLE_BYTE_LENGTH);
 	file.read_exact(&mut buf).await?;
@@ -48,8 +49,7 @@ async fn get_table__(path: &Arc<PathBuf>) -> Result<Vec<u8>,tokio::io::Error>{
 /// Reading has the possibility of corruption.
 pub async fn read(info: &RegionFileInfo, pos: PosU) -> Result<Option<EncodedChunk>,RegionError>{
 	//translating IO errors into `RegionError`s
-	let result = read__(info, pos).await;
-	match result{
+	match read__(info, pos).await{
 		Ok(option) => {
 			let Some(vec) = option else {
 				return Ok(None)
@@ -59,6 +59,7 @@ pub async fn read(info: &RegionFileInfo, pos: PosU) -> Result<Option<EncodedChun
 		Err(err) => Err(RegionError::from_tokio_io_error(err))
 	}
 }
+/// The actual function, split up in order to handle errors cleanly
 async fn read__(info: &RegionFileInfo, pos: PosU) -> Result<Option<Vec<u8>>, tokio::io::Error>{
 	let mut file = OpenOptions::new().write(false).read(true).open(&*info.path).await?;
 	let index = to_index(pos.tuple());
@@ -68,23 +69,24 @@ async fn read__(info: &RegionFileInfo, pos: PosU) -> Result<Option<Vec<u8>>, tok
 		return Ok(None);
 	}
 	file.seek(SeekFrom::Start(start)).await?;
-	let mut buf = Vec::with_capacity(length as usize);
+	let mut buf = vec![0;length as usize];
 	file.read_exact(&mut buf).await?;
 	Ok(Some(buf))
 }
 
 pub async fn write(info: &mut RegionFileInfo, pos: PosU, data: &EncodedChunk) -> Result<(),RegionError>{
 	let data = &data.0;
-	let result  = write__(info, pos, &data).await;
+	let result  = write__(info, pos, data).await;
 	match result{
 		Ok(_) => Ok(()),
 		Err(err) => {
 			//I don't THINK there is any acceptable error here.
-			Err(RegionError::Other(err.into()))
+			Err(RegionError::Other(err))
 		},
 	}
 
 }
+/// The actual function, split up in order to handle errors cleanly
 async fn write__(info: &mut RegionFileInfo, pos: PosU, data: &[u8]) -> Result<()>{
 	let table = &mut info.table;
 	let mut file = WriteFile::init(info.path.clone()).await?;
@@ -95,7 +97,6 @@ async fn write__(info: &mut RegionFileInfo, pos: PosU, data: &[u8]) -> Result<()
 		file.insert_space(start,shifted).await?
 	}
 	file.write(start, data).await?;
-	file.finished().await?;
 	Ok(())
 }
 

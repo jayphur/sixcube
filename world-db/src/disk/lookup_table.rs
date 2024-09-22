@@ -83,14 +83,14 @@ impl LookupTable {
 		vec.resize(LOOKUP_TABLE_BYTE_LENGTH, 0);
 		vec
 	}
-	pub fn from_bytes(mut slice: &[u8]) -> Result<Self> {
+	pub fn from_bytes(slice: &[u8]) -> Result<Self> {
 		let (length_indicator, slice) = slice.split_at(8);
 		let len: u64 = BINCODE_OPTIONS.allow_trailing_bytes().deserialize(length_indicator)?;
 		let (data, _) = slice.split_at(len as usize);
 		let decode: Self = BINCODE_OPTIONS.deserialize(data)
 			.with_context(|| format!("Failed to decode bytes (len = {}) when creating lookup table", slice.len()))?;
 		// if it's an empty boy, init.
-		if decode.padding.len() == 0 || decode.start.len() == 0{
+		if decode.padding.is_empty() || decode.start.is_empty(){
 			return Ok(Self::default());
 		}
 		Ok(decode)

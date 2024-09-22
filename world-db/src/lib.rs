@@ -7,12 +7,11 @@ use serde::{Deserialize, Serialize};
 
 use core_obj::{PosU, VoxelId};
 use prelude::*;
+use prelude::thiserror::Error;
 
 pub const CHUNK_USIZE: usize = 16;
 
-#[cfg(feature = "impl")]
 pub mod map;
-#[cfg(feature = "disk")]
 pub mod disk;
 
 #[async_trait]
@@ -39,9 +38,11 @@ pub struct ChunkPos(pub i16,pub i16,pub i16);
 pub struct ChunkLocalPos(pub u8,pub u8,pub u8);
 
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum Error{
+	#[error("accessed chunk does not exist")]
 	DoesNotExist,
+	#[error("misc error")]
 	Other(ErrorStruct)
 }
 

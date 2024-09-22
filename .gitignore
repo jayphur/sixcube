@@ -1,5 +1,6 @@
 /target
 Cargo.lock
 *.iml
-.vscode
-.idea
+.vscode/
+.idea/
+.idea/*
